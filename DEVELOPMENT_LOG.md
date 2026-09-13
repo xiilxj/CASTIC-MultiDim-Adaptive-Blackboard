@@ -381,3 +381,19 @@ D:\Desktop\pjhb\
      - `6a69b2a`: feat(gen1): 第一代翻转式多媒体黑板机构参数与工程图纸建立 (Review Round 7)
      - `baseline`: feat(baseline): 市面传统推拉黑板国家标准与双工况数字化制图 (Review Round 1-6)
 - **审核结论**: 公开仓库创建成功，10 个里程碑分支全量推送完毕，为后续每一轮技术提交建立了常态化 Git 追踪机制，第 17 轮工程技术审核通过！
+
+---
+
+## 2026-09-12 第18轮技术审核与基于开源cad-mcp的跨环境Agent智能制图架构入库及持久化记忆固化 (Review Round 18)
+- **开发目标与记忆固化**:
+  1. 遵照项目负责人指令，将“借助 Agent 工具（Antigravity）以及基于开源项目 `cad-mcp` 架构打通 WSL 2 (Arch Linux) 与 Windows 宿主机 AutoCAD 2026 跨环境参数化智能制图”的技术实现全面归档；
+  2. 严格执行系统级死命令：将本条长期记忆正式追加固化至唯一长期持久化记忆文件 `~/.gemini/antigravity/rules/persistent_memory.txt`（记录 #012）；
+  3. 编制正式工程技术报告，作为后续 CASTIC 申报材料与答辩展板中“数字化研发工具链创新”与“三自原则（自己设计与制作）”的重大实证材料。
+- **交付核心工程成果清单**:
+  1. **系统级长期持久化记忆**:
+     - 路径: `/home/maker/.gemini/antigravity/rules/persistent_memory.txt`
+     - 记录条目: `记录 #012：【黑板项目：基于开源 cad-mcp 的 WSL Arch Linux 与 Windows AutoCAD 跨环境 Agent 智能制图架构】`
+  2. **工程技术规格与方法论报告 (02-设计规格与部件文档/)**:
+     - 路径: `D:\Desktop\pjhb\02-设计规格与部件文档\基于开源cad-mcp的WSL与WindowsAutoCAD跨环境Agent智能制图架构报告_v1.0.md`
+     - 详述了跨操作系统调度总线、COM ActiveX 原生接管、GB/T 工业图元自动注入、4K 超清光栅化质检闭环，以及在 CASTIC 评审答辩中打破“代做”质疑的战略论据。
+- **审核结论**: 持久化记忆与项目工程材料已实现双重锚定，技术论据扎实闭环，第 18 轮工程技术审核通过！
