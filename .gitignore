@@ -2,6 +2,7 @@
 *.log
 *.tmp
 *.pyc
+*.blend1
 __pycache__/
 .DS_Store
 Thumbs.db
