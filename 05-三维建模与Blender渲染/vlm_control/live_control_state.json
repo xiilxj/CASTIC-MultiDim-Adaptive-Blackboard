@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-10-03 08:45:05",
+  "is_squinting": true,
+  "eye_aspect_ratio": 0.14,
+  "glare_detected": true,
+  "glare_intensity_area": 29036,
+  "target_board_yaw_deg": 18.0,
+  "current_board_yaw_deg": 18.0,
+  "board_wash_light_w": 220.0,
+  "smart_blinds_pct": 65.0,
+  "reasoning_summary": "检测到靠窗席位学生严重眯眼(EAR<0.22)且存在强眩光直射！启动天花板安全分层避光！"
+}
