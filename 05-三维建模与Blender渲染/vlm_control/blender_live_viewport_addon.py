@@ -142,6 +142,15 @@ def live_viewport_tick():
             f"AI Reasoning: {runtime_vars['status_text']}"
         )
 
+        # 5. 强制 3D 视口实时刷新重绘 (确保双手离开鼠标时视口也保持 60 FPS 动态物理刷新)
+        try:
+            for window in bpy.context.window_manager.windows:
+                for area in window.screen.areas:
+                    if area.type == 'VIEW_3D':
+                        area.tag_redraw()
+        except Exception:
+            pass
+
     return 0.016 # 约 60 FPS 丝滑更新
 
 def register():
