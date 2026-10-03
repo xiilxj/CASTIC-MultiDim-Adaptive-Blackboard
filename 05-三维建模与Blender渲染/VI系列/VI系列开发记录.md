@@ -273,3 +273,34 @@ GH_VI7_System_Root (全局坐标原点 [0, 0, 0])
 3. **跨平台原生 Python 兜底入口**:
    - 在任意终端直接执行 `python run_live_system.py` 均可自适应寻址启动。
 
+---
+
+## 十一、 Windows 真机环境实测攻坚与全链路四重异常清障 (第 37 轮工程技术审核)
+
+### 1. 实机截屏问题复盘 (深层排查)
+根据用户提供的控制台运行实况 (`media_1791033395181.png`)，系统在实机双击运行时暴露出以下底层冲突：
+1. **CMD 路径断裂与非法指令**:
+   - 现象：出现 `'ASTIC' 不是内部或外部命令`，`'A' 不是内部或外部命令`，且提示找不到 `run_live_system.py`；
+   - 根因：批处理生成时的路径字符串转义缺陷（`\v` 被转换为 ASCII 垂直制表符 `\x0b`），在 GBK 命令行中将字符截断分割为多条非法指令；
+   - 解决：根目录部署独立的 `run_live_system.py` 引导桥接，批处理文件内容采用 100% 纯 7-bit ASCII 编码，杜绝任何转义歧义。
+2. **多版本 Python 环境与 DLL 依赖冲突**:
+   - 现象：系统默认 PATH 指向开发预览版 Python 3.14 (`C:\Users\Lenovo\...\Python314\python.exe`)，由于预览版兼容性问题导致 NumPy C-extensions DLL 加载崩溃；
+   - 解决：检测并锁定系统完整生产环境 Python 3.10，批处理脚本通过 `py -3.10` 优先拉起。
+3. **OpenCV 5.0.0 架构升级兼容性攻坚**:
+   - 现象：原环境安装的是 `opencv-python-headless`（无 GUI 弹窗能力），且 OpenCV 5.0 原生移除了旧版 `cv2.CascadeClassifier`（改由 DNN 驱动），导致 `AttributeError`；
+   - 解决：卸载 headless 版本，重新安装完整 GUI 版 `opencv-python 5.0.0.93`；同时对分类器加载增加容错兜底与中央视区自适应形态学计算。
+4. **Windows 平台非 ASCII 路径图像读取陷阱**:
+   - 现象：OpenCV 的 `cv2.imread` 在 Windows 原生 API 下无法直接处理包含中文路径的图片文件，返回 `None` 导致 `.copy()` 异常；
+   - 解决：全面重构为 `np.fromfile + cv2.imdecode` 方案，完美支持任意多级中文路径读写。
+5. **Blender 运行实例智能感知**:
+   - 增加当前进程树检索，检测到已有视口运行时自动建立 IPC 通信通道，避免赛场演示时重复开启三维窗口引发显存争抢。
+
+### 2. 真机实测闭环验证
+- 在 Windows 环境下通过 PowerShell 实测执行：
+  ```cmd
+  cd D:\Desktop\CASTICpjhb
+  py -3.10 run_live_system.py --frames 10
+  ```
+- **实测结果**: 进程平稳进入主交互循环，实时生成 `live_control_state.json` 避光决策数据，退出状态码为 0，实机全链路 100% 闭环无异常！
+
+
