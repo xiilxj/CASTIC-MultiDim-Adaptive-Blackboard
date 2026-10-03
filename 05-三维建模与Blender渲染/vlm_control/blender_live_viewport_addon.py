@@ -148,9 +148,12 @@ def register():
     print("="*70)
     print("[GH-VI-2026] 启动 Blender 活体视口 60 FPS 实时数字孪生引擎...")
     print("="*70)
-    # 取消旧定时器防止叠加
-    if live_viewport_tick in bpy.app.timers.registered_timers():
-        bpy.app.timers.unregister(live_viewport_tick)
+    # 取消旧定时器防止叠加 (兼容 Blender 3.x / 4.x / 5.x)
+    try:
+        if bpy.app.timers.is_registered(live_viewport_tick):
+            bpy.app.timers.unregister(live_viewport_tick)
+    except Exception:
+        pass
     bpy.app.timers.register(live_viewport_tick, persistent=True)
     get_or_create_3d_hud_text()
     print("[GH-VI-2026] 视口驱动引擎已激活！正在实时同步外部摄像头与多模态指令...")

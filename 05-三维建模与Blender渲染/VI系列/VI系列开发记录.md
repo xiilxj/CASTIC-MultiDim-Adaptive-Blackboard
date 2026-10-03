@@ -253,3 +253,23 @@ GH_VI7_System_Root (全局坐标原点 [0, 0, 0])
 - 双击批处理文件，即可自动化分屏拉起 Blender 3D 视口与上位机 AI 感知交互窗口；
 - 评委站在摄像头前直接亲身互动，体验到如临其境的“伪 VR”实时控光防眩光系统！
 - 验证帧产物: `preview_interactive_live.png` (`D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_interactive_live.png`)
+
+---
+
+## 十、 活体视口驱动引擎修复与 Windows 双模极速启动器工程化 (第 36 轮工程技术审核)
+
+### 1. Blender 5.0.1 视口主循环定时器 API 修复
+- **问题分析**: 原脚本中使用的 `bpy.app.timers.registered_timers()` 在 Blender 5.0 原生架构中不再暴露该容器属性，执行时抛出 `AttributeError`；
+- **重构解决**: 在 `blender_live_viewport_addon.py` 中重构为标准的 `try: if bpy.app.timers.is_registered(live_viewport_tick): ...` 模式，确保兼容 Blender 3.x / 4.x / 5.x 全系列版本。
+
+### 2. Windows 环境批处理启动器双规部署 (根除 CMD 路径与编码陷阱)
+针对 Windows 控制台默认 CodePage 936 (GBK) 环境，完成根目录与子目录双规启动器部署：
+1. **工程根目录一键启动器 (`D:\Desktop\CASTICpjhb\`)**:
+   - `START_GH_VI.bat`: 纯 ASCII 英文兼容脚本，零转码开销，自适应跳转子目录拉起系统；
+   - `启动GH-VI数字孪生交互系统.bat`: 原生 GBK 编码批处理，完美兼容 Windows 资源管理器直接双击。
+2. **算法控制子目录启动器 (`05-三维建模与Blender渲染\vlm_control\`)**:
+   - `START_LIVE.bat`: 子目录快速双击脚本；
+   - `一键启动实机交互数字孪生系统.bat`: 标准中文批处理。
+3. **跨平台原生 Python 兜底入口**:
+   - 在任意终端直接执行 `python run_live_system.py` 均可自适应寻址启动。
+

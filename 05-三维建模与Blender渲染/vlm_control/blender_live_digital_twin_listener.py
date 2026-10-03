@@ -104,9 +104,12 @@ def update_digital_twin_frame():
 
 def register_live_listener():
     print("[DigitalTwinListener] 启动 Blender 实时数字孪生监听服务...")
-    # 移除旧定时器以防重复
-    if update_digital_twin_frame in bpy.app.timers.registered_timers():
-        bpy.app.timers.unregister(update_digital_twin_frame)
+    # 移除旧定时器以防重复 (兼容 Blender 3.x / 4.x / 5.x)
+    try:
+        if bpy.app.timers.is_registered(update_digital_twin_frame):
+            bpy.app.timers.unregister(update_digital_twin_frame)
+    except Exception:
+        pass
     bpy.app.timers.register(update_digital_twin_frame, persistent=True)
     print("[DigitalTwinListener] 监听器已就绪！每 33ms 自动轮询 live_control_state.json")
 
