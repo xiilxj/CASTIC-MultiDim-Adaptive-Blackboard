@@ -44,9 +44,15 @@ class LiveInteractiveOperator:
         self.cam_id = cam_id
         self.state_file = STATE_FILE
 
-        # 加载级联特征分类器
-        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml') if hasattr(cv2, 'data') else None
-        self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml') if hasattr(cv2, 'data') else None
+        # 加载级联特征分类器 (自适应兼容 OpenCV 4.x / 5.x)
+        self.face_cascade = None
+        self.eye_cascade = None
+        if hasattr(cv2, 'CascadeClassifier') and hasattr(cv2, 'data'):
+            try:
+                self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                self.eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+            except Exception:
+                pass
 
         # 运行状态
         self.ear_history = [0.38] * 20
@@ -142,7 +148,19 @@ class LiveInteractiveOperator:
                 if glare_found:
                     current_ear = 0.12 # 强光照眼导致眼睛闭合细缝
         else:
-            current_ear = 0.14 if glare_found else 0.38
+            # 兼容自适应模式: 默认锁定画面中央面部主视区
+            cx, cy, cw, ch = int(w * 0.25), int(h * 0.15), int(w * 0.50), int(h * 0.65)
+            face_box = (cx, cy, cw, ch)
+            if glare_found:
+                current_ear = 0.13 # 强光致盲/眯眼应激
+            else:
+                # 针对中央人眼区域计算垂直对比度
+                eye_strip = gray[cy + int(ch*0.25):cy + int(ch*0.45), cx + int(cw*0.2):cx + int(cw*0.8)]
+                if eye_strip.size > 0:
+                    ear_val = self.calculate_ear(eye_strip)
+                    current_ear = ear_val if 0.10 <= ear_val <= 0.45 else 0.38
+                else:
+                    current_ear = 0.38
 
         self.ear_history.append(current_ear)
         if len(self.ear_history) > 20:
@@ -289,7 +307,15 @@ class LiveInteractiveOperator:
         if not os.path.exists(sim_bg_path):
             sim_bg_path = r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/preview_sim_v2_vlm_sensor.png"
 
-        frame_bg = cv2.imread(sim_bg_path) if os.path.exists(sim_bg_path) else np.zeros((480, 640, 3), dtype=np.uint8)
+        frame_bg = None
+        if os.path.exists(sim_bg_path):
+            try:
+                frame_bg = cv2.imdecode(np.fromfile(sim_bg_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+            except Exception:
+                frame_bg = None
+        if frame_bg is None:
+            frame_bg = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(frame_bg, "SIMULATION STREAM", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
         print("[Operator] 交互系统进入主循环！")
         last_rendered_ui = None

@@ -1,21 +1,21 @@
 @echo off
-cd /d "%~dp0"
-title GH-VI-2026 Digital Twin Launcher
+title CASTIC GH-VI-2026 Live Controller
 color 0A
-
-echo =====================================================================
-echo  CASTIC GH-VI-2026 Live Digital Twin Interactive Launcher
-echo =====================================================================
-echo [*] Starting Python Core Engine...
-echo [*] Current Directory: %CD%
+cd /d "%~dp0"
+echo =======================================================================
+echo  CASTIC GH-VI-2026 Live Digital Twin Controller
+echo =======================================================================
+echo [*] Launching Python engine...
 echo.
 
-python run_live_system.py
+py -3.10 run_live_system.py
+if %ERRORLEVEL% EQU 0 goto :eof
 
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo [ERROR] Python failed to start. Trying with py launcher...
-    py run_live_system.py
-)
+echo [*] Trying default python...
+python run_live_system.py
+if %ERRORLEVEL% EQU 0 goto :eof
+
+echo [*] Trying py launcher...
+py run_live_system.py
 
 pause

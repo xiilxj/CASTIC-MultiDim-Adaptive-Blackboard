@@ -62,18 +62,26 @@ def main():
     print(f"[*] 锁定 Blender 执行程序: {blender_exe}")
     print(f"[*] 锁定 3D 数字孪生母本: {blend_file}")
 
-    # 3. 启动 Blender 活体视口 (后台/窗口化进程)
-    print("\n[步骤 1/2] 正在拉起 Blender 3D 沉浸式视口 (60 FPS 实时监听)...")
+    # 3. 启动/联动 Blender 活体视口
     blender_proc = None
+    is_running = False
     try:
-        blender_cmd = [blender_exe, blend_file, "-P", addon_script]
-        blender_proc = subprocess.Popen(blender_cmd)
-        print("[+] Blender 活体视口已成功启动！请将 Blender 窗口置于屏幕一侧。")
-    except Exception as e:
-        print(f"[警告] 启动 Blender 异常: {e}，请直接在 Blender 中手动打开该 .blend 文件！")
+        out = subprocess.check_output(['tasklist', '/FI', 'IMAGENAME eq blender.exe'], stderr=subprocess.DEVNULL).decode('gbk', 'ignore')
+        is_running = 'blender.exe' in out.lower()
+    except Exception:
+        pass
 
-    # 稍作等待以确保 Blender 加载
-    time.sleep(2)
+    if is_running:
+        print("\n[+] 检测到 Blender 实例已在屏幕运行中！直接与当前活体 3D 视口建立毫秒级联动中枢。")
+    else:
+        print("\n[步骤 1/2] 正在拉起 Blender 3D 沉浸式视口 (60 FPS 实时监听)...")
+        try:
+            blender_cmd = [blender_exe, blend_file, "-P", addon_script]
+            blender_proc = subprocess.Popen(blender_cmd)
+            print("[+] Blender 活体视口已成功启动！请将 Blender 窗口置于屏幕一侧。")
+            time.sleep(2)
+        except Exception as e:
+            print(f"[警告] 启动 Blender 异常: {e}，请直接在 Blender 中手动打开该 .blend 文件！")
 
     # 4. 启动上位机多相机视觉感知中枢
     print("\n[步骤 2/2] 正在启动多相机视觉感知与自然语言 Agent 控制台...")
@@ -85,13 +93,22 @@ def main():
     print(" 4. 按键盘 'Q' 键或 ESC 退出实时交互。")
     print("-----------------------------------------------------------------------\n")
 
+    import argparse
+    parser = argparse.ArgumentParser(description="CASTIC GH-VI-2026 Launcher")
+    parser.add_argument("--frames", type=int, default=999999, help="Max frames to run")
+    parser.add_argument("--cam", default="0", help="Camera ID (0, 1, 2 or sim)")
+    args, _ = parser.parse_known_args()
+
+    # 相机 ID 类型转换
+    cam_target = int(args.cam) if args.cam.isdigit() else args.cam
+
     try:
         import vlm_interactive_live_operator
         operator = vlm_interactive_live_operator.LiveInteractiveOperator(
             user_instruction=vlm_interactive_live_operator.DEFAULT_PROMPT,
-            cam_id=0 # 默认使用摄像头 0
+            cam_id=cam_target
         )
-        operator.run_interactive_loop(max_frames=999999)
+        operator.run_interactive_loop(max_frames=args.frames)
     except Exception as e:
         print(f"[错误] 控制台运行异常: {e}")
     finally:
