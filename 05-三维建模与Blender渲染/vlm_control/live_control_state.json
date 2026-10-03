@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-10-03 09:31:58",
-  "is_squinting": true,
-  "eye_aspect_ratio": 0.13,
-  "glare_detected": true,
-  "glare_intensity_area": 24965,
-  "target_board_yaw_deg": 18.0,
-  "current_board_yaw_deg": 18.0,
-  "board_wash_light_w": 220.0,
-  "smart_blinds_pct": 65.0,
-  "reasoning_summary": "监测到学生眯眼应激(EAR<0.22)且存在强眩光直射，执行天花板安全偏转！"
+  "timestamp": "2026-10-03 09:45:10",
+  "is_squinting": false,
+  "eye_aspect_ratio": 0.261,
+  "glare_detected": false,
+  "glare_intensity_area": 0,
+  "target_board_yaw_deg": 0.0,
+  "current_board_yaw_deg": 8.6,
+  "board_wash_light_w": 140.0,
+  "smart_blinds_pct": 0.0,
+  "reasoning_summary": "环境光照舒适，眼部开合度正常，黑板保持平展常态。"
 }
