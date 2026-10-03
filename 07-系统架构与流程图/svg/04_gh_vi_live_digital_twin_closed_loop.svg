@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0e1a" />
+      <stop offset="100%" stop-color="#141a29" />
+    </linearGradient>
+    <linearGradient id="cyberBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#4facfe" />
+    </linearGradient>
+    <marker id="arrow4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#00f2fe" />
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="url(#bgGrad4)" />
+  <rect x="2" y="2" width="1196" height="796" fill="none" stroke="#23334d" stroke-width="2" rx="12" />
+
+  <!-- Title -->
+  <g transform="translate(60, 45)">
+    <text font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="24" font-weight="bold" fill="#ffffff">
+      GH-VI-2026 伪 VR 沉浸式真机活体交互数字孪生系统全链路闭环
+    </text>
+    <text y="24" font-family="'Segoe UI', sans-serif" font-size="13" fill="#00f2fe" letter-spacing="1">
+      FULL CLOSED-LOOP PIPELINE · LIVE SENSING &lt;--&gt; AGENT REASONING &lt;--&gt; 60FPS BLENDER VIEWPORT
+    </text>
+  </g>
+
+  <!-- 4 Main Stages in Circular / Pipeline Form -->
+  <!-- Box: W=240, H=320 -->
+
+  <!-- Card 1: 物理感知采集 -->
+  <g transform="translate(60, 110)">
+    <rect width="250" height="420" rx="10" fill="#131d2e" stroke="#38bdf8" stroke-width="1.5" />
+    <rect x="0" y="0" width="250" height="40" rx="10" fill="#1e293b" />
+    <text x="125" y="25" font-family="'PingFang SC', sans-serif" font-size="14" font-weight="bold" fill="#38bdf8" text-anchor="middle">
+      ① 视觉多相机采集
+    </text>
+    <g transform="translate(20, 60)" font-family="'PingFang SC', sans-serif" font-size="12" fill="#94a3b8">
+      <text y="0" font-weight="bold" fill="#ffffff">硬件捕获源：</text>
+      <text y="20">• 笔记本自带 Webcam</text>
+      <text y="38">• USB 高清广角相机</text>
+      <text y="56">• 运动相机 (Action Cam UVC)</text>
+      <text y="74">• 数字孪生仿真流 (sim)</text>
+
+      <text y="115" font-weight="bold" fill="#ffffff">几何形态学特征提取：</text>
+      <text y="135">• 面部主视区自适应定位</text>
+      <text y="153">• 眼裂开合比 EAR 计算</text>
+      <text y="171">  正常睁眼: EAR ≈ 0.38</text>
+      <text y="189" fill="#ff7675">  眯眼应激: EAR &lt; 0.20</text>
+      <text y="215">• 强光直射过曝检测</text>
+      <text y="233">  手机手电筒斑 &gt; 1500px</text>
+
+      <rect x="-5" y="270" width="220" height="65" rx="6" fill="#0c1726" stroke="#38bdf8" stroke-width="1" />
+      <text x="5" y="290" fill="#00f2fe" font-size="11" font-weight="bold">单帧计算延迟: &lt; 2.5ms</text>
+      <text x="5" y="308" fill="#64748b" font-size="11">极轻量纯数学几何运算</text>
+      <text x="5" y="324" fill="#64748b" font-size="11">显存占用: 0MB · CPU &lt; 3%</text>
+    </g>
+  </g>
+  <line x1="310" y1="320" x2="350" y2="320" stroke="#00f2fe" stroke-width="2.5" marker-end="url(#arrow4)" />
+
+  <!-- Card 2: VLM Agent 认知决策 -->
+  <g transform="translate(350, 110)">
+    <rect width="250" height="420" rx="10" fill="#131d2e" stroke="#00f2fe" stroke-width="1.5" />
+    <rect x="0" y="0" width="250" height="40" rx="10" fill="#1e293b" />
+    <text x="125" y="25" font-family="'PingFang SC', sans-serif" font-size="14" font-weight="bold" fill="#00f2fe" text-anchor="middle">
+      ② 智能决策与工具调用
+    </text>
+    <g transform="translate(20, 60)" font-family="'PingFang SC', sans-serif" font-size="12" fill="#94a3b8">
+      <text y="0" font-weight="bold" fill="#ffffff">自然语言指令注入：</text>
+      <text y="20" fill="#38ef7d">“若靠窗学生眯眼或黑板强</text>
+      <text y="38" fill="#38ef7d">反光，自动偏航18度避光，</text>
+      <text y="56" fill="#38ef7d">降百叶窗65%，洗墙灯220W”</text>
+
+      <text y="100" font-weight="bold" fill="#ffffff">Agent 动态工具分发链：</text>
+      <text y="122" fill="#e2e8f0">>>> api_adjust_blackboard</text>
+      <text y="138" fill="#00f2fe">    yaw = +18.0 deg</text>
+      <text y="158" fill="#e2e8f0">>>> api_set_smart_blinds</text>
+      <text y="174" fill="#00f2fe">    level = 65%</text>
+      <text y="194" fill="#e2e8f0">>>> api_set_wash_light</text>
+      <text y="210" fill="#00f2fe">    power = 220W</text>
+
+      <rect x="-5" y="270" width="220" height="65" rx="6" fill="#0c1726" stroke="#00f2fe" stroke-width="1" />
+      <text x="5" y="290" fill="#00f2fe" font-size="11" font-weight="bold">决策透明度: 100% 回显</text>
+      <text x="5" y="308" fill="#64748b" font-size="11">调了什么 / 调了多少度</text>
+      <text x="5" y="324" fill="#64748b" font-size="11">怎样识别 / 为什么调节</text>
+    </g>
+  </g>
+  <line x1="600" y1="320" x2="640" y2="320" stroke="#00f2fe" stroke-width="2.5" marker-end="url(#arrow4)" />
+
+  <!-- Card 3: IPC 共享状态纽带 -->
+  <g transform="translate(640, 110)">
+    <rect width="210" height="420" rx="10" fill="#131d2e" stroke="#a78bfa" stroke-width="1.5" />
+    <rect x="0" y="0" width="210" height="40" rx="10" fill="#1e293b" />
+    <text x="105" y="25" font-family="'PingFang SC', sans-serif" font-size="14" font-weight="bold" fill="#a78bfa" text-anchor="middle">
+      ③ IPC 毫秒级状态总线
+    </text>
+    <g transform="translate(15, 60)" font-family="'PingFang SC', sans-serif" font-size="12" fill="#94a3b8">
+      <text y="0" font-weight="bold" fill="#ffffff">共享状态载体：</text>
+      <text y="20" fill="#a78bfa">live_control_state.json</text>
+
+      <text y="60" font-weight="bold" fill="#ffffff">工业级进程解耦：</text>
+      <text y="80">• 进程 A (Python 感知端)</text>
+      <text y="98">• 进程 B (Blender 渲染端)</text>
+      <text y="116">• 双向无阻塞读写</text>
+      <text y="134">• 文件 mtime 变更探测</text>
+
+      <rect x="-5" y="170" width="190" height="165" rx="6" fill="#0c1726" stroke="#a78bfa" stroke-width="1" />
+      <text x="5" y="190" fill="#c4b5fd" font-size="10" font-family="monospace">{</text>
+      <text x="15" y="208" fill="#c4b5fd" font-size="10" font-family="monospace">"is_squinting": true,</text>
+      <text x="15" y="226" fill="#c4b5fd" font-size="10" font-family="monospace">"target_yaw": 18.0,</text>
+      <text x="15" y="244" fill="#c4b5fd" font-size="10" font-family="monospace">"blinds_pct": 65.0,</text>
+      <text x="15" y="262" fill="#c4b5fd" font-size="10" font-family="monospace">"light_w": 220.0,</text>
+      <text x="15" y="280" fill="#c4b5fd" font-size="10" font-family="monospace">"reason": "避光偏转"</text>
+      <text x="5" y="298" fill="#c4b5fd" font-size="10" font-family="monospace">}</text>
+      <text x="5" y="322" fill="#22c55e" font-size="10" font-weight="bold">IPC 通信抖动: &lt; 0.8ms</text>
+    </g>
+  </g>
+  <line x1="850" y1="320" x2="890" y2="320" stroke="#00f2fe" stroke-width="2.5" marker-end="url(#arrow4)" />
+
+  <!-- Card 4: Blender 60 FPS 物理驱动 -->
+  <g transform="translate(890, 110)">
+    <rect width="250" height="420" rx="10" fill="#131d2e" stroke="#22c55e" stroke-width="1.5" />
+    <rect x="0" y="0" width="250" height="40" rx="10" fill="#1e293b" />
+    <text x="125" y="25" font-family="'PingFang SC', sans-serif" font-size="14" font-weight="bold" fill="#22c55e" text-anchor="middle">
+      ④ 3D 视口伪 VR 联动
+    </text>
+    <g transform="translate(20, 60)" font-family="'PingFang SC', sans-serif" font-size="12" fill="#94a3b8">
+      <text y="0" font-weight="bold" fill="#ffffff">真实机构物理偏航：</text>
+      <text y="20" fill="#4ade80">• Ctrl_Flip_Left 铰链转动</text>
+      <text y="38">  带动整套黑板系统转 18°</text>
+      <text y="56">• S 曲线平滑步进电机阻尼</text>
+
+      <text y="95" font-weight="bold" fill="#ffffff">光学射线与光环境：</text>
+      <text y="115" fill="#f87171">• 危险直射红光瞬间切除</text>
+      <text y="133" fill="#4ade80">• 安全绿光射向吸光天花板</text>
+      <text y="151">• 侧窗丁达尔强光减弱 64%</text>
+
+      <text y="185" font-weight="bold" fill="#ffffff">前墙 3D 浮动发光 HUD：</text>
+      <text y="205" fill="#38bdf8">• 实时刷新文字状态看板</text>
+      <text y="223">• tag_redraw() 强制重绘</text>
+      <text y="241" fill="#22c55e">  双手脱机 60 FPS 丝滑运行</text>
+
+      <rect x="-5" y="270" width="220" height="65" rx="6" fill="#0c1726" stroke="#22c55e" stroke-width="1" />
+      <text x="5" y="290" fill="#22c55e" font-size="11" font-weight="bold">渲染引擎: Blender 5.0</text>
+      <text x="5" y="308" fill="#64748b" font-size="11">视口刷新率: 60 FPS</text>
+      <text x="5" y="324" fill="#64748b" font-size="11">零插件依赖 · 原生 API 驱动</text>
+    </g>
+  </g>
+
+  <!-- Bottom Evaluation Banner -->
+  <g transform="translate(60, 560)">
+    <rect width="1080" height="190" rx="10" fill="#111827" stroke="#374151" stroke-width="1.5" />
+    <text x="30" y="35" font-family="'PingFang SC', sans-serif" font-size="16" font-weight="bold" fill="#facc15">
+      ★ 全国青少年科技创新大赛 (CASTIC) 赛场真实客观演示评价优势
+    </text>
+    
+    <g transform="translate(30, 65)" font-family="'PingFang SC', sans-serif" font-size="12" fill="#cbd5e1">
+      <rect x="0" y="0" width="320" height="95" rx="6" fill="#1f2937" stroke="#4b5563" stroke-width="1" />
+      <text x="15" y="25" font-weight="bold" fill="#38bdf8">【真实人机交互 · 拒绝录屏】</text>
+      <text x="15" y="48">评委走到电脑前对准摄像头，眯眼或拿</text>
+      <text x="15" y="68">手电筒照光，屏幕里的 3D 黑板当场动，</text>
+      <text x="15" y="88">具有如临其境的“伪 VR”活体科技感！</text>
+
+      <rect x="350" y="0" width="320" height="95" rx="6" fill="#1f2937" stroke="#4b5563" stroke-width="1" />
+      <text x="15" y="25" font-weight="bold" fill="#a78bfa">【AI 决策透明 · 拒绝黑盒】</text>
+      <text x="15" y="48">屏幕 HUD 透明化回显识别指标(EAR)、</text>
+      <text x="15" y="68">调节部件、调节角度与天花板吸光机理，</text>
+      <text x="15" y="88">体现极高的科学探究深度与工科严谨性！</text>
+
+      <rect x="700" y="0" width="320" height="95" rx="6" fill="#1f2937" stroke="#4b5563" stroke-width="1" />
+      <text x="15" y="25" font-weight="bold" fill="#34d399">【全班 48 席安全 · 拒绝一刀切】</text>
+      <text x="15" y="48">基于真实 8 列 × 6 行空间测算，反射光</text>
+      <text x="15" y="68">抬升至 Z=2.8m 高空吸光层，绝不误伤</text>
+      <text x="15" y="88">中间和对侧学生，IMAX 视角由 28° 拓至 44.5°！</text>
+    </g>
+  </g>
+</svg>

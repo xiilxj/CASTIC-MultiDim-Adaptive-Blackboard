@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 950" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0d17" />
+      <stop offset="100%" stop-color="#121724" />
+    </linearGradient>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#334155" />
+    </linearGradient>
+    <marker id="arrow3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#00f2fe" />
+    </marker>
+    <marker id="arrow-bambu" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#00ae42" />
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="url(#bgGrad3)" />
+  <rect x="2" y="2" width="1196" height="946" fill="none" stroke="#222f47" stroke-width="2" rx="12" />
+
+  <!-- Title -->
+  <g transform="translate(60, 42)">
+    <text font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="24" font-weight="bold" fill="#ffffff">
+      端侧 VLM 智能闭环与 Bambu 物理样机制造双轨工程总架构图
+    </text>
+    <text y="24" font-family="'Segoe UI', sans-serif" font-size="13" fill="#00f2fe" letter-spacing="1">
+      DUAL-TRACK ENGINEERING ARCHITECTURE · EDGE VLM DIGITAL TWIN &amp; BAMBU 3D FABRICATION
+    </text>
+  </g>
+
+  <!-- Top Hub: Core Decision Layer -->
+  <g transform="translate(150, 95)">
+    <rect width="900" height="70" rx="10" fill="#152136" stroke="#00f2fe" stroke-width="2" />
+    <text x="450" y="32" font-family="'PingFang SC', sans-serif" font-size="16" font-weight="bold" fill="#00f2fe" text-anchor="middle">
+      【前置核心】端侧视觉语言大模型 (Edge VLM) 动态多任务中枢 (Intel Ultra 9)
+    </text>
+    <text x="450" y="54" font-family="'PingFang SC', sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">
+      实时多相机视频流采集 (OpenCV) · 人类自然语言动态指令解构 · 多 Agent 协同仲裁调度
+    </text>
+  </g>
+  <line x1="600" y1="165" x2="600" y2="198" stroke="#00f2fe" stroke-width="2.5" marker-end="url(#arrow3)" />
+
+  <!-- Center Hub: 3D Master Assembly -->
+  <g transform="translate(200, 200)">
+    <rect width="800" height="66" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2" />
+    <text x="400" y="30" font-family="'PingFang SC', sans-serif" font-size="15" font-weight="bold" fill="#ffffff" text-anchor="middle">
+      【三维机械母本】Blender 5.0 高精度机构学绑定与动力学装配体
+    </text>
+    <text x="400" y="50" font-family="'PingFang SC', sans-serif" font-size="12" fill="#38bdf8" text-anchor="middle">
+      对角线双铰链正交解耦 · 双横梁伸缩套杆 · 48 席现代人体工学教室光环境
+    </text>
+  </g>
+
+  <!-- Split Lines to Two Subgraphs -->
+  <!-- Left Split to X=310, Y=330 -->
+  <path d="M 400 266 L 400 300 L 310 300 L 310 330" fill="none" stroke="#00d2ff" stroke-width="2.5" marker-end="url(#arrow3)" />
+  <!-- Right Split to X=890, Y=330 -->
+  <path d="M 800 266 L 800 300 L 890 300 L 890 330" fill="none" stroke="#00ae42" stroke-width="2.5" marker-end="url(#arrow-bambu)" />
+
+  <!-- Subgraph 1: Left (VLM Digital Twin Track) -->
+  <g transform="translate(50, 335)">
+    <rect width="520" height="570" rx="12" fill="#0f172a" stroke="#00d2ff" stroke-width="1.5" stroke-dasharray="4 4" />
+    <rect x="0" y="0" width="520" height="36" rx="12" fill="#1e293b" />
+    <text x="260" y="23" font-family="'PingFang SC', sans-serif" font-size="14" font-weight="bold" fill="#00f2fe" text-anchor="middle">
+      分支一：VLM 数字孪生活体闭环 (Digital Twin Track)
+    </text>
+
+    <!-- Node L1: Perception Input -->
+    <g transform="translate(30, 60)">
+      <rect width="460" height="75" rx="8" fill="#1a2538" stroke="#38bdf8" stroke-width="1" />
+      <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#ffffff">1. 视觉感知输入层 (Perception Input)</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#94a3b8">摄像头 0 (内置 Webcam) / 1 (外接高清 USB) / 2 (运动相机 UVC) / Sim</text>
+      <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#38bdf8">毫秒级特征提取：眼裂长宽比 EAR 计算 + 高光强过曝光斑面积轮廓判定</text>
+    </g>
+    <line x1="260" y1="135" x2="260" y2="160" stroke="#00d2ff" stroke-width="2" marker-end="url(#arrow3)" />
+
+    <!-- Node L2: VLM Core Reasoning -->
+    <g transform="translate(30, 162)">
+      <rect width="460" height="85" rx="8" fill="#1a2538" stroke="#00f2fe" stroke-width="1" />
+      <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#00f2fe">2. 端侧轻量 VLM 认知推理中枢 (Cognitive Engine)</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#ffffff">端侧 Qwen2.5-VL-3B / OpenVINO / OpenCV 混合推理</text>
+      <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#94a3b8">动态多任务响应：眼部用眼疲劳 · 黑板眩光直射 · 百叶窗拉下 · 洗墙灯补光</text>
+      <text x="20" y="78" font-family="'PingFang SC', sans-serif" font-size="11" fill="#e2e8f0">人类意图对齐：严格执行自然语言 Prompt 设定的避光策略约束</text>
+    </g>
+    <line x1="260" y1="247" x2="260" y2="272" stroke="#00d2ff" stroke-width="2" marker-end="url(#arrow3)" />
+
+    <!-- Node L3: Multi-Objective Arbitration -->
+    <g transform="translate(30, 274)">
+      <rect width="460" height="75" rx="8" fill="#1a2538" stroke="#a78bfa" stroke-width="1" />
+      <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#a78bfa">3. 多目标博弈仲裁与 Agent 工具调用 (Tool Calling)</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#ffffff">>>> TOOL CALL: api_adjust_blackboard(yaw=18.0 deg)</text>
+      <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#a78bfa">>>> TOOL CALL: api_set_smart_blinds(65%) | api_set_light(220W)</text>
+    </g>
+    <line x1="260" y1="349" x2="260" y2="374" stroke="#00d2ff" stroke-width="2" marker-end="url(#arrow3)" />
+
+    <!-- Node L4: Blender Live Actuation -->
+    <g transform="translate(30, 376)">
+      <rect width="460" height="85" rx="8" fill="#1a2538" stroke="#22c55e" stroke-width="1.5" />
+      <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#22c55e">4. Blender 60 FPS 物理活体驱动 (Viewport Driver)</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#ffffff">IPC 共享状态文件 live_control_state.json 毫秒级轮询</text>
+      <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#94a3b8">S 曲线平滑动力学阻尼：活动黑板转动 18° + 红光切除 + 绿光射向天花板</text>
+      <text x="20" y="78" font-family="'PingFang SC', sans-serif" font-size="11" fill="#22c55e">3D 视口 tag_redraw() 强制重绘，实现双手脱机 60 FPS 游戏级伪 VR 联动！</text>
+    </g>
+    <line x1="260" y1="461" x2="260" y2="486" stroke="#00d2ff" stroke-width="2" marker-end="url(#arrow3)" />
+
+    <!-- Output L5 -->
+    <g transform="translate(30, 488)">
+      <rect width="460" height="55" rx="8" fill="#064e3b" stroke="#10b981" stroke-width="1.5" />
+      <text x="230" y="25" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#34d399" text-anchor="middle">
+        【交付物】全国创新大赛赛场“伪 VR”真机活体互动演示系统
+      </text>
+      <text x="230" y="44" font-family="'PingFang SC', sans-serif" font-size="11" fill="#a7f3d0" text-anchor="middle">
+        1280x720 决策 HUD 终端 + 实时三维视口客观测控，彻底终结静态 PPT 答辩
+      </text>
+    </g>
+  </g>
+
+  <!-- Subgraph 2: Right (Bambu 3D Fabrication Track) -->
+  <g transform="translate(630, 335)">
+    <rect width="520" height="570" rx="12" fill="#0f172a" stroke="#00ae42" stroke-width="1.5" stroke-dasharray="4 4" />
+    <rect x="0" y="0" width="520" height="36" rx="12" fill="#1b3a24" />
+    <text x="260" y="23" font-family="'PingFang SC', sans-serif" font-size="14" font-weight="bold" fill="#00ae42" text-anchor="middle">
+      分支二：Bambu Studio 物理样机制造链路 (Fabrication Track)
+    </text>
+
+    <!-- Node R1: Geometric Scaling -->
+    <g transform="translate(30, 60)">
+      <rect width="460" height="75" rx="8" fill="#16291c" stroke="#22c55e" stroke-width="1" />
+      <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#ffffff">1. 1:10 物理缩比与构件空间拆解 (Decomposition)</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#86efac">总跨度 6000mm 原型等比缩放至 600mm 桌面级演示样机</text>
+      <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#94a3b8">结构拆解：外框架/滑槽导轨/滑动滚轮/铰链销轴/双层板面/舵机舱</text>
+    </g>
+    <line x1="260" y1="135" x2="260" y2="160" stroke="#00ae42" stroke-width="2" marker-end="url(#arrow-bambu)" />
+
+    <!-- Node R2: Tolerance Optimization -->
+    <g transform="translate(30, 162)">
+      <rect width="460" height="85" rx="8" fill="#16291c" stroke="#4ade80" stroke-width="1" />
+      <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#4ade80">2. FDM 制造公差与装配补偿 (Tolerance Optimization)</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#ffffff">运动副装配间隙精调为 0.20mm ~ 0.25mm，避免热胀冷缩卡滞</text>
+      <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#94a3b8">榫卯定位销 + M3 沉头内六角不锈钢螺栓预埋孔定位</text>
+      <text x="20" y="78" font-family="'PingFang SC', sans-serif" font-size="11" fill="#86efac">关键受力受剪构件采用 45° 打印走向以最大化层间剪切强度</text>
+    </g>
+    <line x1="260" y1="247" x2="260" y2="272" stroke="#00ae42" stroke-width="2" marker-end="url(#arrow-bambu)" />
+
+    <!-- Node R3: Bambu 3MF Multi-plate -->
+    <g transform="translate(30, 274)">
+      <rect width="460" height="75" rx="8" fill="#16291c" stroke="#22c55e" stroke-width="1" />
+      <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#86efac">3. 拓竹多色多盘工程生成 (Bambu 3MF Pipeline)</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#ffffff">盘 1: 哑光碳灰框架 | 盘 2: 深墨绿亚光板面 | 盘 3: 机械亮橙铰链</text>
+      <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#94a3b8">自动化 Python 批处理导出 STL 与 Bambu Studio 3MF 工程</text>
+    </g>
+    <line x1="260" y1="349" x2="260" y2="374" stroke="#00ae42" stroke-width="2" marker-end="url(#arrow-bambu)" />
+
+    <!-- Node R4: Micro Servo Hardware Sync -->
+    <g transform="translate(30, 376)">
+      <rect width="460" height="85" rx="8" fill="#16291c" stroke="#10b981" stroke-width="1.5" />
+      <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#34d399">4. 物理电机执行器与嵌入式驱动 (Hardware Actuation)</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#ffffff">微型总线金属齿轮舵机 / 步进电机挂载在铰链转轴原点</text>
+      <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#94a3b8">ESP32 / 串口通信与上位机 IPC 接收相同 target_yaw 角度指令</text>
+      <text x="20" y="78" font-family="'PingFang SC', sans-serif" font-size="11" fill="#86efac">实现三维屏幕视口与现实物理桌面样机 1:1 同步旋转避光！</text>
+    </g>
+    <line x1="260" y1="461" x2="260" y2="486" stroke="#00ae42" stroke-width="2" marker-end="url(#arrow-bambu)" />
+
+    <!-- Output R5 -->
+    <g transform="translate(30, 488)">
+      <rect width="460" height="55" rx="8" fill="#064e3b" stroke="#10b981" stroke-width="1.5" />
+      <text x="230" y="25" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#34d399" text-anchor="middle">
+        【交付物】全国创新大赛问辩现场高精度实体可动样机模型
+      </text>
+      <text x="230" y="44" font-family="'PingFang SC', sans-serif" font-size="11" fill="#a7f3d0" text-anchor="middle">
+        评委可亲手拨动检验机构自锁、自洁排灰与对角线铰链零干涉
+      </text>
+    </g>
+  </g>
+</svg>
