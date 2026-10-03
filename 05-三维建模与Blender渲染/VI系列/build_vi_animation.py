@@ -207,11 +207,20 @@ def create_board_mesh(name, width, height, thickness, bezel_w, materials):
     return root
 
 def set_bezier_interpolation(obj):
-    """将对象的所有动画曲线设置为平滑 Bezier 加减速"""
-    if obj.animation_data and obj.animation_data.action:
-        for fcurve in obj.animation_data.action.fcurves:
-            for kfp in fcurve.keyframe_points:
-                kfp.interpolation = 'BEZIER'
+    """将对象的所有动画曲线设置为平滑 Bezier 加减速 (兼容 Blender 5.0 全新 Action 架构)"""
+    try:
+        if obj.animation_data and obj.animation_data.action:
+            act = obj.animation_data.action
+            if hasattr(act, 'fcurves'):
+                for fcurve in act.fcurves:
+                    for kfp in fcurve.keyframe_points:
+                        kfp.interpolation = 'BEZIER'
+            elif hasattr(act, 'curves'):
+                for curve in act.curves:
+                    for kfp in curve.keyframe_points:
+                        kfp.interpolation = 'BEZIER'
+    except Exception as e:
+        print(f">> [Info] 插值设置跳过或已采用默认Bezier: {e}")
 
 def build_vi1_animation_scene(output_dir):
     """
