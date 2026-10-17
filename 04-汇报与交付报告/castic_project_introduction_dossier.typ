@@ -238,8 +238,7 @@
   
   [#text(weight: "bold", fill: brand-blue)[附 录 研发自证与知识产权技术支撑附件]], [#text(fill: rgb("#64748B"))[14]],
   [#h(1.2em) 附录一：GitHub 34 次不可篡改 Git 提交时间轴记录], [#text(fill: rgb("#64748B"))[14]],
-  [#h(1.2em) 附录二：国家知识产权局专利申请受理与公布通知书（共 3 页）], [#text(fill: rgb("#64748B"))[15]],
-  [#h(1.2em) 附录三：发明专利说明书标准工程附图集（共 2 页）], [#text(fill: rgb("#64748B"))[18]]
+  [#h(1.2em) 附录二：国家知识产权局专利申请受理与公布通知书（共 3 页）], [#text(fill: rgb("#64748B"))[15]]
 )
 
 #v(0.3cm)
@@ -740,45 +739,9 @@ $ F_"bearing" = frac(M_"tilt", d_"diag") = frac(343, 1.25) = 274.4 " N" $
   ]
 ]
 
-// ==============================================================================
-// 附录三：发明专利说明书标准工程附图集 (共 2 页)
-// ==============================================================================
-#pagebreak()
-= 附录三：发明专利说明书标准工程附图集
-
-#text(size: 8.5pt, fill: rgb("#475569"))[
-  *说明书附图（一）*：一种折叠翻转式模块化多媒体教学黑板及光环境系统——总装配立面结构与零件公差装配蓝图（工程图号: DWG-Z3-001）
-]
-#v(0.15cm)
-#align(center)[
-  #rect(width: 90%, stroke: 0.8pt + border-color, fill: card-bg, radius: 3pt, inset: 3pt)[
-    #image("../08-答辩展板与模块化写真/assets/cad_sheet_4.png", width: 96%, fit: "contain")
-  ]
-]
-
-#pagebreak()
-#text(size: 8.5pt, fill: rgb("#475569"))[
-  *说明书附图（二）*：一种折叠翻转式模块化多媒体教学黑板及光环境系统——对角铰链三维微观结构与避光偏航空间位姿图
-]
-#v(0.15cm)
-#align(center)[
-  #grid(
-    columns: (1fr, 1fr),
-    gutter: 8pt,
-    rect(width: 100%, stroke: 0.6pt + border-color, fill: card-bg, radius: 3pt, inset: 3pt)[
-      #image("../08-答辩展板与模块化写真/assets/gen3_hinge_macro_4k.png", width: 98%, fit: "contain")
-      #text(size: 7.5pt, fill: rgb("#64748B"))[附图 3：对角承重铰链与推力轴承微观装配图]
-    ],
-    rect(width: 100%, stroke: 0.6pt + border-color, fill: card-bg, radius: 3pt, inset: 3pt)[
-      #image("../08-答辩展板与模块化写真/assets/gen3_deployed_yaw_4k.png", width: 98%, fit: "contain")
-      #text(size: 7.5pt, fill: rgb("#64748B"))[附图 4：避光偏航态（Yaw 4.5°）空间位姿图]
-    ]
-  )
-]
-
 #v(0.3cm)
 #align(center)[
   #text(size: 8.5pt, fill: rgb("#475569"), weight: "bold")[
-    — 全卷十九页终 · 浙江省塘下中学 林诚俊 独立研发科技发明成果技术报告 · 2026年10月 —
+    — 全卷终 · 浙江省塘下中学 林诚俊 独立研发科技发明成果技术报告 · 2026年10月 —
   ]
 ]
