@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1760 840" width="100%" height="100%">
+  <defs>
+    <linearGradient id="nodeWhiteGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <filter id="softShadow" x="-5%" y="-10%" width="110%" height="125%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.07" />
+    </filter>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7c3aed" />
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#ea580c" />
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#16a34a" />
+    </marker>
+  </defs>
+
+  <!-- 纯白工程底色与微细灰边框 -->
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <rect x="2" y="2" width="1756" height="836" fill="none" stroke="#cbd5e1" stroke-width="1.5" rx="8" />
+
+  <!-- 顶部主标题栏 -->
+  <g transform="translate(36, 42)">
+    <rect x="0" y="-6" width="8" height="36" fill="#0284c7" rx="3" />
+    <text x="20" y="22" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="26" font-weight="900" fill="#0f172a">
+      第三代 Z 系列多维叠合黑板物理拓扑装配与运动学求解主流程
+    </text>
+    <text x="820" y="22" font-family="'Segoe UI', 'Arial', sans-serif" font-size="14" font-weight="bold" fill="#0284c7" letter-spacing="1">
+      TOPOLOGY ASSEMBLY &amp; KINEMATIC SIMULATION PIPELINE · Z-SERIES MASTER
+    </text>
+    <rect x="1520" y="-2" width="190" height="28" fill="#f1f5f9" stroke="#0284c7" stroke-width="1" rx="14" />
+    <text x="1615" y="17" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="13" font-weight="bold" fill="#0284c7" text-anchor="middle">
+      全流程闭环工程记录
+    </text>
+  </g>
+
+  <!-- 分栏小标题 -->
+  <g transform="translate(36, 92)" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="bold">
+    <!-- 左栏标题 -->
+    <rect x="0" y="0" width="820" height="32" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1" rx="4" />
+    <text x="20" y="21" fill="#0369a1">【阶段一：空间机构学参数化拓扑装配】 几何约束解耦与干涉消除</text>
+
+    <!-- 右栏标题 -->
+    <rect x="868" y="0" width="856" height="32" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1" rx="4" />
+    <text x="888" y="21" fill="#6b21a8">【阶段二：刚柔运动学仿真与工业实证】 多模态工况驱动与光学验证</text>
+  </g>
+
+  <!-- 节点组 (双列布局，每列4个，高130，间距36) -->
+  <g font-family="'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+    <!-- ==================== 左列 1 ~ 4 ==================== -->
+    <!-- 步骤 1 -->
+    <g transform="translate(36, 140)" filter="url(#softShadow)">
+      <rect width="820" height="125" rx="8" fill="url(#nodeWhiteGrad)" stroke="#0284c7" stroke-width="1.8" />
+      <circle cx="45" cy="62" r="24" fill="#0284c7" />
+      <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">1</text>
+      <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">新建独立工程目录体系与部件拆解命名规范</text>
+      <text x="88" y="72" fill="#475569" font-size="14.5">路径规范：05-三维建模与Blender渲染/Z系列/ · 严格执行防覆盖规范</text>
+      <text x="88" y="98" fill="#0284c7" font-weight="bold" font-size="13.5">工程实绩：将 30 余项零件进行树状分级（底架/滑轨/主副板/拉杆），锁定基准原点</text>
+    </g>
+    <!-- 箭头 1 -> 2 -->
+    <line x1="446" y1="265" x2="446" y2="293" stroke="#0284c7" stroke-width="3" marker-end="url(#arrowBlue)" />
+
+    <!-- 步骤 2 -->
+    <g transform="translate(36, 295)" filter="url(#softShadow)">
+      <rect width="820" height="125" rx="8" fill="url(#nodeWhiteGrad)" stroke="#0284c7" stroke-width="1.8" />
+      <circle cx="45" cy="62" r="24" fill="#0284c7" />
+      <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">2</text>
+      <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">构建参数化总装拓扑装配驱动脚本</text>
+      <text x="88" y="72" fill="#475569" font-size="14.5">核心程序：build_z_series_master.py · 纯数学矩阵变换与拓扑装配</text>
+      <text x="88" y="98" fill="#0284c7" font-weight="bold" font-size="13.5">工程实绩：消除手动拖拽错位误差，实现从基准 4000mm 到极限 6000mm 毫秒级重构</text>
+    </g>
+    <!-- 箭头 2 -> 3 -->
+    <line x1="446" y1="420" x2="446" y2="448" stroke="#0284c7" stroke-width="3" marker-end="url(#arrowBlue)" />
+
+    <!-- 步骤 3 -->
+    <g transform="translate(36, 450)" filter="url(#softShadow)">
+      <rect width="820" height="125" rx="8" fill="url(#nodeWhiteGrad)" stroke="#059669" stroke-width="1.8" />
+      <circle cx="45" cy="62" r="24" fill="#059669" />
+      <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">3</text>
+      <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">建立双层贴合超薄板面系统</text>
+      <text x="88" y="72" fill="#475569" font-size="14.5">物理参数：内主板 12mm + 外折叠板 12mm + 2mm气隙 = 26mm 极致厚度</text>
+      <text x="88" y="98" fill="#059669" font-weight="bold" font-size="13.5">工程实绩：空间压缩率提升 54%，解决传统双层黑板纵深过厚（>150mm）侵占讲台痛点</text>
+    </g>
+    <!-- 箭头 3 -> 4 -->
+    <line x1="446" y1="575" x2="446" y2="603" stroke="#059669" stroke-width="3" marker-end="url(#arrowGreen)" />
+
+    <!-- 步骤 4 -->
+    <g transform="translate(36, 605)" filter="url(#softShadow)">
+      <rect width="820" height="125" rx="8" fill="url(#nodeWhiteGrad)" stroke="#7c3aed" stroke-width="2.2" />
+      <circle cx="45" cy="62" r="24" fill="#7c3aed" />
+      <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">4</text>
+      <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">装配对角线双铰链正交解耦机构 (Diagonal Topology)</text>
+      <text x="88" y="72" fill="#475569" font-size="14.5">运动学突破：内板外侧翻转主轴 + 外板内侧折叠轴错位布局</text>
+      <text x="88" y="98" fill="#7c3aed" font-weight="bold" font-size="13.5">工程实绩：彻底消除死点干涉，实现主副板展开角 [0°~ 180°] 任意非线性连续平滑过渡</text>
+    </g>
+
+    <!-- 跨阶段折转连线 4 -> 5 -->
+    <path d="M 856 667 L 890 667 L 890 195 L 868 195" fill="none" stroke="#7c3aed" stroke-width="3" stroke-dasharray="6,4" />
+    <circle cx="890" cy="667" r="4" fill="#7c3aed" />
+
+    <!-- ==================== 右列 5 ~ 8 ==================== -->
+    <!-- 步骤 5 -->
+    <g transform="translate(868, 140)" filter="url(#softShadow)">
+      <rect width="856" height="125" rx="8" fill="url(#nodeWhiteGrad)" stroke="#d97706" stroke-width="1.8" />
+      <circle cx="45" cy="62" r="24" fill="#d97706" />
+      <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">5</text>
+      <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">生成双横梁自洁延伸轨、Φ28mm 伸缩套杆与刚性拉杆</text>
+      <text x="88" y="72" fill="#475569" font-size="14.5">结构特征：倒V形自洁排粉孔 + 端面毛刷 + 门式闭环刚架</text>
+      <text x="88" y="98" fill="#d97706" font-weight="bold" font-size="13.5">工程实绩：极限展开至 6000mm 悬臂状态下挠度 &lt; 1.5mm，完全达到重载书写平稳标准</text>
+    </g>
+    <!-- 箭头 5 -> 6 -->
+    <line x1="1296" y1="265" x2="1296" y2="293" stroke="#d97706" stroke-width="3" marker-end="url(#arrowOrange)" />
+
+    <!-- 步骤 6 -->
+    <g transform="translate(868, 295)" filter="url(#softShadow)">
+      <rect width="856" height="125" rx="8" fill="url(#nodeWhiteGrad)" stroke="#ea580c" stroke-width="1.8" />
+      <circle cx="45" cy="62" r="24" fill="#ea580c" />
+      <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">6</text>
+      <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">校准真实工业物理色彩与 PBR 材质参数</text>
+      <text x="88" y="72" fill="#475569" font-size="14.5">光学贴图：大屏蓝天渐变、墨绿板面粗糙度 0.55、铝合金金属度 0.96</text>
+      <text x="88" y="98" fill="#ea580c" font-weight="bold" font-size="13.5">工程实绩：实现漫反射与镜面反射准确分层，为后续光线追踪眩光仿真提供可信物理介质</text>
+    </g>
+    <!-- 箭头 6 -> 7 -->
+    <line x1="1296" y1="420" x2="1296" y2="448" stroke="#ea580c" stroke-width="3" marker-end="url(#arrowOrange)" />
+
+    <!-- 步骤 7 -->
+    <g transform="translate(868, 450)" filter="url(#softShadow)">
+      <rect width="856" height="125" rx="8" fill="url(#nodeWhiteGrad)" stroke="#0284c7" stroke-width="1.8" />
+      <circle cx="45" cy="62" r="24" fill="#0284c7" />
+      <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">7</text>
+      <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">编写运动姿态控制器与批量自动化求解引擎</text>
+      <text x="88" y="72" fill="#475569" font-size="14.5">批处理程序：render_z_series_states.py · 驱动工况一至四精准运动轨迹</text>
+      <text x="88" y="98" fill="#0284c7" font-weight="bold" font-size="13.5">工程实绩：一键解算工况一(收拢)、工况二(大屏)、工况三(避光偏航)、工况四(全景展开)</text>
+    </g>
+    <!-- 箭头 7 -> 8 -->
+    <line x1="1296" y1="575" x2="1296" y2="603" stroke="#0284c7" stroke-width="3" marker-end="url(#arrowBlue)" />
+
+    <!-- 步骤 8 (最终验收节点 - 翠绿强化) -->
+    <g transform="translate(868, 605)" filter="url(#softShadow)">
+      <rect width="856" height="125" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.4" />
+      <circle cx="45" cy="62" r="24" fill="#16a34a" />
+      <path d="M 36 62 L 43 69 L 55 54" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+      <text x="88" y="42" fill="#14532d" font-weight="bold" font-size="18">输出四大工况 4K 高保真实渲染图集与工程实证记录</text>
+      <text x="88" y="72" fill="#166534" font-size="14.5">实证交付：Z1~Z4 核心姿态工业成果，记录全流程研发日志与运动学边界</text>
+      <text x="88" y="98" fill="#15803d" font-weight="900" font-size="14">闭环验证：形成严谨完整的青少年科技创新大赛工程实物级研究证据链</text>
+    </g>
+
+  </g>
+
+  <!-- 底部微注 -->
+  <text x="880" y="798" font-family="'Segoe UI', 'PingFang SC', sans-serif" font-size="12" fill="#64748b" text-anchor="middle">
+    CASTIC-ENG-Z-PIPELINE · 机构学装配拓扑与运动学自动化解算流水线 · 完全自主研发
+  </text>
+</svg>

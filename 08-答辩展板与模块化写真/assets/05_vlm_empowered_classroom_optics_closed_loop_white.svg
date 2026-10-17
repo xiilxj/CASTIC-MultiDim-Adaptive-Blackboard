@@ -1,0 +1,286 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1760 840" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <filter id="softShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.06" />
+    </filter>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7c3aed" />
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#ea580c" />
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#16a34a" />
+    </marker>
+  </defs>
+
+  <!-- 纯白工程底色与边框 -->
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <rect x="2" y="2" width="1756" height="836" fill="none" stroke="#cbd5e1" stroke-width="1.5" rx="8" />
+
+  <!-- 顶部主标题栏 -->
+  <g transform="translate(36, 42)">
+    <rect x="0" y="-6" width="8" height="36" fill="#0284c7" rx="3" />
+    <text x="20" y="22" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="24" font-weight="900" fill="#0f172a">
+      端侧 VLM 赋能教室光环境全闭环决策与机构学逆向求解流程
+    </text>
+    <text x="800" y="22" font-family="'Segoe UI', 'Arial', sans-serif" font-size="13.5" font-weight="bold" fill="#0284c7" letter-spacing="0.8">
+      END-TO-END VLM REASONING &amp; KINEMATIC INVERSE SOLVING PIPELINE · CASTIC 2026
+    </text>
+    <rect x="1530" y="-2" width="190" height="28" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2" rx="14" />
+    <text x="1625" y="17" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="bold" fill="#16a34a" text-anchor="middle">
+      全离线·零隐私泄露
+    </text>
+  </g>
+
+  <!-- 四大核心阶段卡片 (X=36, 465, 894, 1323; 宽 405, 高 690) -->
+  <g font-family="'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+    <!-- ==================== 阶段 ①：多模态感知层 ==================== -->
+    <g transform="translate(36, 85)" filter="url(#softShadow)">
+      <rect width="405" height="690" rx="8" fill="url(#cardGrad)" stroke="#0284c7" stroke-width="1.8" />
+      <rect x="0" y="0" width="405" height="44" rx="8" fill="#f0f9ff" />
+      <circle cx="28" cy="22" r="14" fill="#0284c7" />
+      <text x="28" y="27" fill="#ffffff" font-weight="900" font-size="14" text-anchor="middle">1</text>
+      <text x="52" y="28" fill="#0369a1" font-weight="bold" font-size="16">多模态光场与教学场景感知</text>
+
+      <!-- 条目 1: 侧窗光斑 -->
+      <g transform="translate(18, 60)">
+        <rect width="369" height="155" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+        <rect width="5" height="155" fill="#0284c7" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#0f172a">侧窗日照光斑实时追踪</text>
+        <text x="16" y="54" font-size="12.5" fill="#475569">硬件源：教室侧窗 60Hz 广角监控流</text>
+        <text x="16" y="78" font-size="12.5" fill="#475569">算法：OpenCV 毫秒级提取强光饱和斑</text>
+        <text x="16" y="102" font-size="12.5" fill="#0284c7" font-weight="bold">触发条件：光斑 &gt; 1500px · 照度 &gt; 2500 Lux</text>
+        <text x="16" y="126" font-size="12" fill="#64748b">特征：解算黑板表面空间直射坐标系</text>
+      </g>
+
+      <!-- 条目 2: 学生眼裂应激 -->
+      <g transform="translate(18, 230)">
+        <rect width="369" height="165" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+        <rect width="5" height="165" fill="#d97706" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#0f172a">学生视网膜反射与眯眼应激</text>
+        <text x="16" y="54" font-size="12.5" fill="#475569">人脸主视区几何形态学特征提取</text>
+        <text x="16" y="78" font-size="12.5" fill="#475569">眼裂开合比 EAR：正常 0.38 vs 眯眼 &lt; 0.20</text>
+        <text x="16" y="104" font-size="12.5" fill="#d97706" font-weight="bold">痛点识别：前排右侧 6 席严重反光盲区</text>
+        <text x="16" y="128" font-size="12" fill="#475569">计算性能：单帧解算延迟 &lt; 2.5ms</text>
+        <text x="16" y="148" font-size="11.5" fill="#64748b">纯轻量几何运算 · 零显存占用</text>
+      </g>
+
+      <!-- 条目 3: 行为流与指令 -->
+      <g transform="translate(18, 410)">
+        <rect width="369" height="150" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+        <rect width="5" height="150" fill="#16a34a" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#0f172a">教学行为流与语音动态指令</text>
+        <text x="16" y="54" font-size="12.5" fill="#475569">教师姿态：讲台站位与大屏互动状态</text>
+        <text x="16" y="78" font-size="12.5" fill="#475569">板书密集度：判断是否需要超长大篇幅</text>
+        <text x="16" y="104" font-size="12.5" fill="#15803d" font-weight="bold">自然语言：'反光刺眼，启动避光'</text>
+        <text x="16" y="128" font-size="11.5" fill="#64748b">Whisper-Tiny 端侧离线毫秒级转写语义</text>
+      </g>
+
+      <!-- 阶段一总结 -->
+      <g transform="translate(18, 575)">
+        <rect width="369" height="95" rx="6" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.2" />
+        <text x="16" y="28" font-weight="bold" font-size="13" fill="#0369a1">感知层交付成果：</text>
+        <text x="16" y="52" font-size="12.5" fill="#0284c7" font-weight="bold">1. 教室全场动态光斑空间张量</text>
+        <text x="16" y="74" font-size="12.5" fill="#0284c7" font-weight="bold">2. 视网膜入射角与教学行为向量</text>
+      </g>
+    </g>
+
+    <!-- 箭头 1 -> 2 -->
+    <line x1="441" y1="430" x2="463" y2="430" stroke="#0284c7" stroke-width="3" marker-end="url(#arrowBlue)" />
+
+    <!-- ==================== 阶段 ②：端侧 VLM 认知推理 ==================== -->
+    <g transform="translate(465, 85)" filter="url(#softShadow)">
+      <rect width="405" height="690" rx="8" fill="url(#cardGrad)" stroke="#7c3aed" stroke-width="1.8" />
+      <rect x="0" y="0" width="405" height="44" rx="8" fill="#faf5ff" />
+      <circle cx="28" cy="22" r="14" fill="#7c3aed" />
+      <text x="28" y="27" fill="#ffffff" font-weight="900" font-size="14" text-anchor="middle">2</text>
+      <text x="52" y="28" fill="#6b21a8" font-weight="bold" font-size="16">端侧 VLM 决策中枢 (Qwen2.5-VL)</text>
+
+      <!-- 条目 1: 离线部署 -->
+      <g transform="translate(18, 60)">
+        <rect width="369" height="145" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+        <rect width="5" height="145" fill="#7c3aed" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#0f172a">端侧 INT4 离线量化大模型</text>
+        <text x="16" y="54" font-size="12.5" fill="#475569">基座模型：Qwen2.5-VL-3B-Instruct</text>
+        <text x="16" y="78" font-size="12.5" fill="#475569">显存需求：仅需 2.8 GB (AWQ 量化)</text>
+        <text x="16" y="102" font-size="12.5" fill="#7c3aed" font-weight="bold">全链路延迟：145ms 端到端视觉闭环</text>
+        <text x="16" y="126" font-size="11.5" fill="#64748b">完全杜绝师生人脸与教学图像上云泄露</text>
+      </g>
+
+      <!-- 条目 2: 帕累托决策与四大工况 -->
+      <g transform="translate(18, 220)">
+        <rect width="369" height="340" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+        <rect width="5" height="340" fill="#8b5cf6" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#0f172a">镜面反射角逆解与四大工况仲裁</text>
+        <text x="16" y="48" font-size="12" fill="#64748b">根据入射光与视线法向量进行帕累托最优仲裁：</text>
+
+        <!-- 工况 3-A -->
+        <g transform="translate(12, 60)">
+          <rect width="345" height="58" rx="4" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1" />
+          <text x="12" y="22" font-size="12.5" font-weight="bold" fill="#6b21a8">【工况三·A】防侧窗强眩光态</text>
+          <text x="12" y="44" font-size="11.5" fill="#7c3aed">策略：主屏偏航 4.5° + 两翼副板 28° 聚拢避光</text>
+        </g>
+
+        <!-- 工况 3-B -->
+        <g transform="translate(12, 128)">
+          <rect width="345" height="58" rx="4" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1" />
+          <text x="12" y="22" font-size="12.5" font-weight="bold" fill="#6b21a8">【工况三·B】复杂推导长板书态</text>
+          <text x="12" y="44" font-size="11.5" fill="#7c3aed">策略：双套杆极限滑出，展开至 6000mm 全景板书</text>
+        </g>
+
+        <!-- 工况 2 -->
+        <g transform="translate(12, 196)">
+          <rect width="345" height="58" rx="4" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1" />
+          <text x="12" y="22" font-size="12.5" font-weight="bold" fill="#6b21a8">【工况二】多媒体互动教学态</text>
+          <text x="12" y="44" font-size="11.5" fill="#7c3aed">策略：两翼平推叠合，86 寸大屏 100% 露显</text>
+        </g>
+
+        <!-- 工况 1 -->
+        <g transform="translate(12, 264)">
+          <rect width="345" height="58" rx="4" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1" />
+          <text x="12" y="22" font-size="12.5" font-weight="bold" fill="#6b21a8">【工况一】课间纯板书与防撞态</text>
+          <text x="12" y="44" font-size="11.5" fill="#7c3aed">策略：双层闭合，4000mm 完全遮蔽大屏保护</text>
+        </g>
+      </g>
+
+      <!-- 阶段二总结 -->
+      <g transform="translate(18, 575)">
+        <rect width="369" height="95" rx="6" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.2" />
+        <text x="16" y="28" font-weight="bold" font-size="13" fill="#6b21a8">决策层交付成果：</text>
+        <text x="16" y="52" font-size="12.5" fill="#7c3aed" font-weight="bold">1. 帕累托最优工况状态目标标识</text>
+        <text x="16" y="74" font-size="12.5" fill="#7c3aed" font-weight="bold">2. 目标避光偏航法向量参数</text>
+      </g>
+    </g>
+
+    <!-- 箭头 2 -> 3 -->
+    <line x1="870" y1="430" x2="892" y2="430" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrowPurple)" />
+
+    <!-- ==================== 阶段 ③：机构学逆向动力学映射 ==================== -->
+    <g transform="translate(894, 85)" filter="url(#softShadow)">
+      <rect width="405" height="690" rx="8" fill="url(#cardGrad)" stroke="#ea580c" stroke-width="1.8" />
+      <rect x="0" y="0" width="405" height="44" rx="8" fill="#fff7ed" />
+      <circle cx="28" cy="22" r="14" fill="#ea580c" />
+      <text x="28" y="27" fill="#ffffff" font-weight="900" font-size="14" text-anchor="middle">3</text>
+      <text x="52" y="28" fill="#c2410c" font-weight="bold" font-size="16">空间机构学逆向动力学求解</text>
+
+      <!-- 条目 1: 自由度解耦 -->
+      <g transform="translate(18, 60)">
+        <rect width="369" height="175" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+        <rect width="5" height="175" fill="#ea580c" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#0f172a">语义策略映射至 4 自由度机械参量</text>
+        <text x="16" y="54" font-size="12.5" fill="#475569">① 偏航转角 Yaw：Δθ ∈ [-18°, +18°] (锁 4.5°)</text>
+        <text x="16" y="78" font-size="12.5" fill="#475569">② 平移滑移行程：X ∈ [0, 1000mm] 双梁导轨</text>
+        <text x="16" y="102" font-size="12.5" fill="#475569">③ 对角线铰链翻折：φ ∈ [0°, 180°] 正交解耦</text>
+        <text x="16" y="126" font-size="12.5" fill="#475569">④ 刚性延伸套杆：L ∈ [0, 1000mm] 极限悬臂</text>
+        <text x="16" y="152" font-size="12" fill="#ea580c" font-weight="bold">死点消除：内翻转轴+外折叠轴错位布局</text>
+      </g>
+
+      <!-- 条目 2: JSON 指令报文 -->
+      <g transform="translate(18, 250)">
+        <rect width="369" height="310" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+        <rect width="5" height="310" fill="#f97316" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#0f172a">生成标准化 JSON 机构驱动报文</text>
+        <text x="16" y="48" font-size="12" fill="#64748b">VLM 认知层与物理底层电机执行总线交互协议：</text>
+        
+        <rect x="12" y="60" width="345" height="235" rx="4" fill="#0f172a" />
+        <text x="24" y="88" font-family="'Consolas', monospace" font-size="12" fill="#38bdf8">{</text>
+        <text x="36" y="110" font-family="'Consolas', monospace" font-size="12" fill="#e2e8f0">  &quot;state&quot;: &quot;ANTI_GLARE_MODE&quot;,</text>
+        <text x="36" y="134" font-family="'Consolas', monospace" font-size="12" fill="#a7f3d0">  &quot;target_yaw_deg&quot;: 4.5,</text>
+        <text x="36" y="158" font-family="'Consolas', monospace" font-size="12" fill="#fde68a">  &quot;fold_wing_deg&quot;: 28.0,</text>
+        <text x="36" y="182" font-family="'Consolas', monospace" font-size="12" fill="#f472b6">  &quot;slide_extend_mm&quot;: 1000.0,</text>
+        <text x="36" y="206" font-family="'Consolas', monospace" font-size="12" fill="#c4b5fd">  &quot;deflection_limit&quot;: &quot;&lt; 1.5mm&quot;,</text>
+        <text x="36" y="230" font-family="'Consolas', monospace" font-size="12" fill="#34d399">  &quot;response_timeout_s&quot;: 3.5</text>
+        <text x="24" y="254" font-family="'Consolas', monospace" font-size="12" fill="#38bdf8">}</text>
+        <text x="24" y="280" font-family="'Consolas', monospace" font-size="11" fill="#94a3b8">// 毫秒级总线广播至伺服驱动器</text>
+      </g>
+
+      <!-- 阶段三总结 -->
+      <g transform="translate(18, 575)">
+        <rect width="369" height="95" rx="6" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.2" />
+        <text x="16" y="28" font-weight="bold" font-size="13" fill="#c2410c">解算层交付成果：</text>
+        <text x="16" y="52" font-size="12.5" fill="#ea580c" font-weight="bold">1. 毫米级步进电机与伺服驱动参数</text>
+        <text x="16" y="74" font-size="12.5" fill="#ea580c" font-weight="bold">2. 机构刚柔耦合极限安全位移包络</text>
+      </g>
+    </g>
+
+    <!-- 箭头 3 -> 4 -->
+    <line x1="1299" y1="430" x2="1321" y2="430" stroke="#ea580c" stroke-width="3" marker-end="url(#arrowOrange)" />
+
+    <!-- ==================== 阶段 ④：光环境闭环检验 ==================== -->
+    <g transform="translate(1323, 85)" filter="url(#softShadow)">
+      <rect width="401" height="690" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.2" />
+      <rect x="0" y="0" width="401" height="44" rx="8" fill="#dcfce7" />
+      <circle cx="28" cy="22" r="14" fill="#16a34a" />
+      <path d="M 21 22 L 26 27 L 35 17" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" />
+      <text x="52" y="28" fill="#15803d" font-weight="bold" font-size="16">机构执行与光环境闭环校验</text>
+
+      <!-- 条目 1: 物理姿态重构 -->
+      <g transform="translate(18, 60)">
+        <rect width="365" height="145" rx="6" fill="#ffffff" stroke="#bbf7d0" stroke-width="1" />
+        <rect width="5" height="145" fill="#22c55e" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#14532d">多维黑板空间姿态重构执行</text>
+        <text x="16" y="54" font-size="12.5" fill="#334155">执行单元：步进电机 + 导轨霍尔编码器</text>
+        <text x="16" y="78" font-size="12.5" fill="#334155">平滑到位时间：&lt; 3.2 秒 (非线性加减速)</text>
+        <text x="16" y="102" font-size="12.5" fill="#16a34a" font-weight="bold">悬臂刚度：极限 6000mm 展开挠度 &lt; 1.5mm</text>
+        <text x="16" y="126" font-size="11.5" fill="#64748b">完全杜绝机构颤振与手推偏位，平稳书写</text>
+      </g>
+
+      <!-- 条目 2: 光学数据实测对比 -->
+      <g transform="translate(18, 220)">
+        <rect width="365" height="340" rx="6" fill="#ffffff" stroke="#bbf7d0" stroke-width="1" />
+        <rect width="5" height="340" fill="#16a34a" rx="2" />
+        <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#14532d">物理光学实测对比 (Before vs After)</text>
+
+        <!-- 对比 1 -->
+        <g transform="translate(12, 42)">
+          <rect width="341" height="65" rx="4" fill="#fef2f2" stroke="#fecaca" stroke-width="1" />
+          <text x="12" y="22" font-size="12" font-weight="bold" fill="#991b1b">基准态 (市面传统黑板)：严重直射眩光</text>
+          <text x="12" y="42" font-size="11.5" fill="#b91c1c">直射眩光照度: 2950 Lux (严重致盲)</text>
+          <text x="12" y="58" font-size="11" fill="#b91c1c">学生视网膜反光对比度: 1.8:1 (板书难辨)</text>
+        </g>
+
+        <!-- 对比 2 -->
+        <g transform="translate(12, 118)">
+          <rect width="341" height="75" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.2" />
+          <text x="12" y="22" font-size="12" font-weight="bold" fill="#166534">第三代 Z 系列 (VLM 赋能)：国标护眼</text>
+          <text x="12" y="42" font-size="11.5" font-weight="bold" fill="#15803d">眩光骤降至: 480 Lux (下降 83.7%)</text>
+          <text x="12" y="58" font-size="11.5" font-weight="bold" fill="#15803d">反光比跃升至: 14.5:1 (高清晰漫反射)</text>
+        </g>
+
+        <!-- 闭环判定 -->
+        <g transform="translate(12, 205)">
+          <rect width="341" height="120" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+          <text x="12" y="22" font-size="12" font-weight="bold" fill="#0f172a">闭环达标校验与自适应微调机制：</text>
+          <text x="12" y="46" font-size="11.5" fill="#475569">若监测到边缘反光残留率 &gt; 5%：</text>
+          <text x="12" y="70" font-size="12" font-weight="bold" fill="#16a34a">触发微调偏转: Δθ ± 0.5° 循环收敛</text>
+          <text x="12" y="94" font-size="11.5" fill="#64748b">直至全教室 48 席均无盲区，锁定姿态</text>
+        </g>
+      </g>
+
+      <!-- 阶段四总结 -->
+      <g transform="translate(18, 575)">
+        <rect width="365" height="95" rx="6" fill="#dcfce7" stroke="#86efac" stroke-width="1.2" />
+        <text x="16" y="28" font-weight="bold" font-size="13" fill="#14532d">终极工程结论：</text>
+        <text x="16" y="52" font-size="12.5" font-weight="bold" fill="#15803d">实现教室光环境自适应主动护眼避光！</text>
+        <text x="16" y="74" font-size="11.5" fill="#166534">物理实验与青创赛评审证据链 100% 闭环</text>
+      </g>
+    </g>
+
+    <!-- 闭环反馈折线 (从阶段 4 底部折返到阶段 2 底部) -->
+    <path d="M 1523 740 L 1523 765 L 667 765 L 667 740" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowGreen)" />
+    <rect x="1010" y="752" width="170" height="24" rx="4" fill="#16a34a" />
+    <text x="1095" y="768" fill="#ffffff" font-size="11.5" font-weight="bold" text-anchor="middle">
+      自适应光斑消除动态闭环反馈
+    </text>
+
+  </g>
+</svg>
