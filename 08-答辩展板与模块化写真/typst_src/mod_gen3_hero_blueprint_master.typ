@@ -291,9 +291,9 @@
                         #grid(
                           columns: (1fr, auto),
                           text(size: 8.2pt, weight: "bold", fill: rgb("#FDE68A"))[
-                            【工况三·A】平移侧滑展开与避光偏航形态 (6000mm)
+                            【工况三】两翼侧滑外展与避光偏航形态 (8000mm)
                           ],
-                          text(size: 7pt, fill: rgb("#FCD34D"), weight: "bold")[两翼副板聚拢 · 消除侧窗眩光]
+                          text(size: 7pt, fill: rgb("#FCD34D"), weight: "bold")[两翼展出4000mm · 核心受光板微偏避光]
                         )
                       ]
                     ]
@@ -305,10 +305,10 @@
                     fill: rgb("#0A0F1D")
                   )[
                     #image(
-                      "../../05-三维建模与Blender渲染/Z系列/Z3_1_工况三之一_平移侧滑极限展开与避光偏航形态_6000mm_4K.png",
+                      "../assets/vi7_exported_stage3_yaw.png",
                       width: 100%,
                       height: 100%,
-                      fit: "cover"
+                      fit: "contain"
                     )
                   ],
                   rect(
@@ -320,7 +320,7 @@
                     #pad(x: 3mm)[
                       #align(horizon)[
                         #text(size: 7.5pt, fill: rgb("#FEF3C7"))[
-                          *状态特征*：双横梁外伸套管滑出，外侧副板向前倾斜折叠 28° 聚拢，中置大屏偏航 4.5°，破坏侧窗光线对学生的镜面反射角。
+                          *状态特征*：左右两翼各2块衍生板沿双横梁套杆外滑，总跨度达8000mm！核心受光板微偏4.5°将侧窗眩光折射至天花板无人区。
                         ]
                       ]
                     ]
@@ -329,7 +329,7 @@
               ],
               
               // ----------------------------------------------------------------
-              // 工况 3-2：Z3_2 极限侧滑展开且折叠板回填连贯板书形态 (6000mm)
+              // 工况 4：Z3_2 极限全景全展平铺回填形态 (8000mm)
               // ----------------------------------------------------------------
               rect(
                 width: 100%,
@@ -352,9 +352,9 @@
                         #grid(
                           columns: (1fr, auto),
                           text(size: 8.2pt, weight: "bold", fill: rgb("#DDD6FE"))[
-                            【工况三·B】侧滑展开与平展回填形态 (6000mm)
+                            【工况四】两翼完全平铺回填超长全展形态 (8000mm)
                           ],
-                          text(size: 7pt, fill: rgb("#C4B5FD"), weight: "bold")[6米全景板书 · 面积提升150%]
+                          text(size: 7pt, fill: rgb("#C4B5FD"), weight: "bold")[8米全景纯平巨幕 · 彻底释放复杂理科板书]
                         )
                       ]
                     ]
@@ -366,10 +366,10 @@
                     fill: rgb("#0A0F1D")
                   )[
                     #image(
-                      "../../05-三维建模与Blender渲染/Z系列/Z3_2_工况三之二_极限侧滑展开且折叠板回填连贯板书形态_6000mm_4K.png",
+                      "../assets/vi7_exported_stage4_full.png",
                       width: 100%,
                       height: 100%,
-                      fit: "cover"
+                      fit: "contain"
                     )
                   ],
                   rect(
@@ -381,7 +381,7 @@
                     #pad(x: 3mm)[
                       #align(horizon)[
                         #text(size: 7.5pt, fill: rgb("#F5F3FF"))[
-                          *状态特征*：副板完全展平回填至主平面，形成 6000mm 超长全景纯平面书写板面，彻底释放复杂理科板书推导空间。
+                          *状态特征*：两翼衍生板完全展平回填，形成左衍生2m+左固定1m+中置大屏2m+右固定1m+右衍生2m的8000mm纯平巨幕，板书面积成倍扩充。
                         ]
                       ]
                     ]
