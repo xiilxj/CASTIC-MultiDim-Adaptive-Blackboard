@@ -134,7 +134,7 @@
         <g transform="translate(12, 128)">
           <rect width="345" height="58" rx="4" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1" />
           <text x="12" y="22" font-size="12.5" font-weight="bold" fill="#6b21a8">【工况三·B】复杂推导长板书态</text>
-          <text x="12" y="44" font-size="11.5" fill="#7c3aed">策略：双套杆极限滑出，展开至 6000mm 全景板书</text>
+          <text x="12" y="44" font-size="11.5" fill="#7c3aed">策略：双套杆极限滑出，展开至 8000mm 全景板书</text>
         </g>
 
         <!-- 工况 2 -->
@@ -230,7 +230,7 @@
         <text x="16" y="26" font-weight="bold" font-size="14.5" fill="#14532d">多维黑板空间姿态重构执行</text>
         <text x="16" y="54" font-size="12.5" fill="#334155">执行单元：步进电机 + 导轨霍尔编码器</text>
         <text x="16" y="78" font-size="12.5" fill="#334155">平滑到位时间：&lt; 3.2 秒 (非线性加减速)</text>
-        <text x="16" y="102" font-size="12.5" fill="#16a34a" font-weight="bold">悬臂刚度：极限 6000mm 展开挠度 &lt; 1.5mm</text>
+        <text x="16" y="102" font-size="12.5" fill="#16a34a" font-weight="bold">悬臂刚度：极限 8000mm 展开挠度 &lt; 1.5mm</text>
         <text x="16" y="126" font-size="11.5" fill="#64748b">完全杜绝机构颤振与手推偏位，平稳书写</text>
       </g>
 

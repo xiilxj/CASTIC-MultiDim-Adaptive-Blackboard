@@ -198,7 +198,7 @@
                 #pad(x: 3mm, y: 1.5mm)[
                   #align(horizon)[
                     #text(size: 7.8pt, fill: rgb("#F1F5F9"), weight: "medium")[
-                      *机构全生命周期状态流转*：从 *完全遮蔽 (Covered 4000mm)* $arrow.r$ *退回露屏 (Compact 4000mm)* $arrow.r$ *避光偏航聚拢 (Yaw Anti-Glare)* $arrow.r$ *外伸极限展开 (Panoramic 6000mm)* 平滑流转。
+                      *机构全生命周期状态流转*：从 *完全遮蔽 (Covered 4000mm)* $arrow.r$ *退回露屏 (Compact 4000mm)* $arrow.r$ *避光偏航聚拢 (Yaw Anti-Glare)* $arrow.r$ *外伸极限展开 (Panoramic 8000mm)* 平滑流转。
                     ]
                   ]
                 ]

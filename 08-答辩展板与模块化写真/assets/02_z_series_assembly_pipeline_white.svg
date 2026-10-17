@@ -74,7 +74,7 @@
       <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">2</text>
       <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">构建参数化总装拓扑装配驱动脚本</text>
       <text x="88" y="72" fill="#475569" font-size="14.5">核心程序：build_z_series_master.py · 纯数学矩阵变换与拓扑装配</text>
-      <text x="88" y="98" fill="#0284c7" font-weight="bold" font-size="13.5">工程实绩：消除手动拖拽错位误差，实现从基准 4000mm 到极限 6000mm 毫秒级重构</text>
+      <text x="88" y="98" fill="#0284c7" font-weight="bold" font-size="13.5">工程实绩：消除手动拖拽错位误差，实现从基准 4000mm 到极限 8000mm 毫秒级重构</text>
     </g>
     <!-- 箭头 2 -> 3 -->
     <line x1="446" y1="420" x2="446" y2="448" stroke="#0284c7" stroke-width="3" marker-end="url(#arrowBlue)" />
@@ -113,7 +113,7 @@
       <text x="45" y="71" fill="#ffffff" font-weight="900" font-size="22" text-anchor="middle">5</text>
       <text x="88" y="42" fill="#0f172a" font-weight="bold" font-size="18">生成双横梁自洁延伸轨、Φ28mm 伸缩套杆与刚性拉杆</text>
       <text x="88" y="72" fill="#475569" font-size="14.5">结构特征：倒V形自洁排粉孔 + 端面毛刷 + 门式闭环刚架</text>
-      <text x="88" y="98" fill="#d97706" font-weight="bold" font-size="13.5">工程实绩：极限展开至 6000mm 悬臂状态下挠度 &lt; 1.5mm，完全达到重载书写平稳标准</text>
+      <text x="88" y="98" fill="#d97706" font-weight="bold" font-size="13.5">工程实绩：极限展开至 8000mm 悬臂状态下挠度 &lt; 1.5mm，完全达到重载书写平稳标准</text>
     </g>
     <!-- 箭头 5 -> 6 -->
     <line x1="1296" y1="265" x2="1296" y2="293" stroke="#d97706" stroke-width="3" marker-end="url(#arrowOrange)" />

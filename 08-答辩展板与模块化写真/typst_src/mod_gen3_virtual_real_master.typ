@@ -66,7 +66,7 @@
                   radius: 2pt,
                   inset: (x: 5pt, y: 2.5pt)
                 )[
-                  #text(size: 7.5pt, weight: "bold", fill: rgb("#6EE7B7"))[自由度 F = 4 · 4000~6000mm 终极闭环]
+                  #text(size: 7.5pt, weight: "bold", fill: rgb("#6EE7B7"))[自由度 F = 4 · 4000~8000mm 终极闭环]
                 ]
               )
             ]

@@ -299,7 +299,7 @@
                       ],
                       [
                         #text(size: 6.5pt, fill: rgb("#064E3B"), weight: "bold")[
-                          对角线双铰链跨度隔离 $Delta X=1000$mm，零干涉4000~6000mm自由拓展。
+                          对角线双铰链跨度隔离 $Delta X=1000$mm，零干涉4000~8000mm自由拓展。
                         ]
                       ]
                     )
@@ -376,7 +376,7 @@
                     hinge_out = (±2000.0, -85.0, 0.0) # 外侧 30° 偏航避光轴心
                     # 2. 自动化生成 GB/T 工业标准尺寸链与对齐标注
                     dim1 = acad.ModelSpace.AddDimAligned(p_start, p_end, text_pos)
-                    dim1.TextOverride = "6000 [极限展开跨度]"
+                    dim1.TextOverride = "8000 [极限展开跨度]"
                     dim1.ToleranceDisplay = 1 # 严格标注工业级机械配合公差
                     ```
                   ]

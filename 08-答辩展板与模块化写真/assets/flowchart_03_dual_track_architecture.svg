@@ -128,7 +128,7 @@
     <g transform="translate(30, 60)">
       <rect width="460" height="75" rx="8" fill="#16291c" stroke="#22c55e" stroke-width="1" />
       <text x="20" y="28" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#ffffff">1. 1:10 物理缩比与构件空间拆解 (Decomposition)</text>
-      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#86efac">总跨度 6000mm 原型等比缩放至 600mm 桌面级演示样机</text>
+      <text x="20" y="48" font-family="'PingFang SC', sans-serif" font-size="11" fill="#86efac">总跨度 8000mm 原型等比缩放至 600mm 桌面级演示样机</text>
       <text x="20" y="65" font-family="'PingFang SC', sans-serif" font-size="11" fill="#94a3b8">结构拆解：外框架/滑槽导轨/滑动滚轮/铰链销轴/双层板面/舵机舱</text>
     </g>
     <line x1="260" y1="135" x2="260" y2="160" stroke="#00ae42" stroke-width="2" marker-end="url(#arrow-bambu)" />

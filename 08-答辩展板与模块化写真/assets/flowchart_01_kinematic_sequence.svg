@@ -122,7 +122,7 @@
   <g transform="translate(0, 440)">
     <rect x="80" y="0" width="1040" height="30" rx="4" fill="rgba(253, 203, 110, 0.08)" stroke="#fdcb6e" stroke-width="1" stroke-dasharray="3 3" />
     <text x="95" y="20" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#fdcb6e">
-      阶段 2：整体多维避光翻动 (YAW +8.0°~+18.0°) · 阳光漫反射重定向至吸光天花板
+      阶段 2：整体多维避光翻动 (工况YAW +4.5° · 极限+15.0°) · 阳光镜面反射重定向至吸光天花板
     </text>
 
     <!-- Message 5 -->
@@ -134,19 +134,19 @@
   <g transform="translate(0, 565)">
     <rect x="80" y="0" width="1040" height="30" rx="4" fill="rgba(0, 184, 148, 0.08)" stroke="#00b894" stroke-width="1" stroke-dasharray="3 3" />
     <text x="95" y="20" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#00b894">
-      阶段 3：双梁套杆外伸 (EXTEND OUT +1000mm) · 门式刚架跨度延展
+      阶段 3：双梁套杆外伸 (EXTEND OUT 两翼衍生4000mm) · 门式刚架跨度延展
     </text>
 
     <!-- Message 6 -->
     <line x1="380" y1="50" x2="612" y2="50" stroke="#00b894" stroke-width="2" marker-end="url(#arrow-green)" />
-    <text x="500" y="42" font-family="'PingFang SC', sans-serif" font-size="12" fill="#a8ffeb" text-anchor="middle">6. 具有高刚性金属框架的衍生杆从主滑槽横向外伸 1000mm</text>
+    <text x="500" y="42" font-family="'PingFang SC', sans-serif" font-size="12" fill="#a8ffeb" text-anchor="middle">6. 具有高刚性金属框架的衍生杆从主滑槽横向外伸扩展至左右各2000mm</text>
   </g>
 
   <!-- Stage 4: PANORAMIC 6M -->
   <g transform="translate(0, 690)">
     <rect x="80" y="0" width="1040" height="30" rx="4" fill="rgba(255, 118, 117, 0.08)" stroke="#ff7675" stroke-width="1" stroke-dasharray="3 3" />
     <text x="95" y="20" font-family="'PingFang SC', sans-serif" font-size="13" font-weight="bold" fill="#ff7675">
-      阶段 4：外滑边界与向内翻折补缺 (PANORAMIC 6000mm 终极展开形态)
+      阶段 4：外滑边界与向内翻折补缺 (PANORAMIC 8000mm 终极展开形态)
     </text>
 
     <!-- Message 7 -->

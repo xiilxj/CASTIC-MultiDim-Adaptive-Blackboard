@@ -226,7 +226,7 @@
                 radius: 3pt,
                 inset: (x: 8pt, y: 4.5pt)
               )[
-                #text(size: 11pt, weight: "bold", fill: rgb("#38BDF8"))[4000~6000mm 4自由度演进]
+                #text(size: 11pt, weight: "bold", fill: rgb("#38BDF8"))[4000~8000mm 4自由度演进]
               ],
               
               rect(

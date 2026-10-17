@@ -164,7 +164,7 @@
         stack(
           dir: ltr,
           spacing: 3mm,
-          ..("对角线双铰链正交解耦", "4000~6000mm 4自由度复合机构", "端侧 VLM 视觉闭环自适应避光", "Blender 5.0 Cycles 光照重构", "AutoCAD 4K 蓝图").map(tech => {
+          ..("对角线双铰链正交解耦", "4000~8000mm 4自由度复合机构", "端侧 VLM 视觉闭环自适应避光", "Blender 5.0 Cycles 光照重构", "AutoCAD 4K 蓝图").map(tech => {
             rect(
               stroke: 0.8pt + rgb("#0284C7"),
               fill: rgb("#0C2138"),

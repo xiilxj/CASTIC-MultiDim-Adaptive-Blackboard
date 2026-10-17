@@ -292,10 +292,17 @@ def build_raster_mockup_and_pdf(vector_pdf_path):
     print("=" * 70)
     # 将 board_final 保存为无损 300 DPI PDF 方便老旧喷绘设备
     raster_pdf_path = os.path.join(PDF_DIR, "CASTIC_900x1200_答辩展板_300DPI高清总装全图.pdf")
-    board_final.save(raster_pdf_path, "PDF", resolution=100.0)
-    if os.path.exists(HOST_DESKTOP):
-        subprocess.run(["cp", raster_pdf_path, f"{HOST_DESKTOP}/CASTIC_900x1200_答辩展板_300DPI高清总装全图.pdf"])
-        print(f"✅ 已复制 300DPI 光栅总装 PDF 至桌面: {HOST_DESKTOP}/CASTIC_900x1200_答辩展板_300DPI高清总装全图.pdf")
+    try:
+        board_final.save(raster_pdf_path, "PDF", resolution=100.0)
+        if os.path.exists(HOST_DESKTOP):
+            subprocess.run(["cp", raster_pdf_path, f"{HOST_DESKTOP}/CASTIC_900x1200_答辩展板_300DPI高清总装全图.pdf"])
+            print(f"✅ 已复制 300DPI 光栅总装 PDF 至桌面: {HOST_DESKTOP}/CASTIC_900x1200_答辩展板_300DPI高清总装全图.pdf")
+    except PermissionError:
+        alt_path = os.path.join(PDF_DIR, "CASTIC_900x1200_答辩展板_300DPI高清总装全图_v2.pdf")
+        board_final.save(alt_path, "PDF", resolution=100.0)
+        if os.path.exists(HOST_DESKTOP):
+            subprocess.run(["cp", alt_path, f"{HOST_DESKTOP}/CASTIC_900x1200_答辩展板_300DPI高清总装全图_v2.pdf"])
+            print(f"✅ 已复制 300DPI 光栅总装 PDF 至桌面: {HOST_DESKTOP}/CASTIC_900x1200_答辩展板_300DPI高清总装全图_v2.pdf")
 
 if __name__ == "__main__":
     compile_all_modules()
