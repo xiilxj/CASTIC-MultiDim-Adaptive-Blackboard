@@ -91,6 +91,13 @@ class VLMEngineSelector:
                 f"{thought}\n"
                 f"👉 动作下发: 降低电动百叶窗至 {blinds_pct}% 拦截侧窗强光；黑板洗墙灯加力至 {wash_light_w}W 消除反光死角，板书对比度恢复至 {contrast_ratio}！"
             )
+            hud_lines = [
+                f"> MULTIMODAL PERCEPTION: Glare Area={glare_area}px | Retinal Lux~{lux_est}lx",
+                f"> PHYSIOLOGICAL EAR={ear:.2f} [CRITICAL SQUINT STRESS DETECTED]",
+                f"> CAUSAL DECISION: Lower Blinds to {blinds_pct}% | Angle {slat_angle} deg",
+                f"> WALL WASH LIGHTING: Boost to {wash_light_w}W (CCT {cct}K)",
+                f"> POSTURE LOCK: Blackboard Tilt 4.5 deg [GOLDEN ANGLE LOCKED]"
+            ]
         else:
             blinds_pct = 15
             slat_angle = 15
@@ -108,12 +115,20 @@ class VLMEngineSelector:
                 f"api_set_wall_wash_light(power={wash_light_w}W, cct={cct}K)"
             ]
             reply = f"{thought}\n👉 动作下发: 保持常态采光与微倾锁定，综合能耗降低 42%！"
+            hud_lines = [
+                f"> MULTIMODAL PERCEPTION: Uniform Daylighting | Ambient Lux~{lux_est}lx",
+                f"> PHYSIOLOGICAL EAR={ear:.2f} [HEALTHY & COMFORTABLE OCULAR RANGE]",
+                f"> CAUSAL DECISION: Keep Blinds {blinds_pct}% (15 deg) for Natural Lighting",
+                f"> WALL WASH LIGHTING: Maintain Eco-Green 140W (CCT 4000K)",
+                f"> POSTURE LOCK: Blackboard Tilt 4.5 deg | Save ~38% Wattage"
+            ]
 
         return {
             "model": model_name,
             "prompt": user_prompt,
             "thought": thought,
             "reply": reply,
+            "hud_lines": hud_lines,
             "actions": actions,
             "actuators": {
                 "blinds_pct": blinds_pct,
@@ -130,7 +145,7 @@ class VLMEngineSelector:
 
 class CameraDeviceManager:
     """
-    智能摄像头管理器：自动优先扫描并接入外接 USB 运动相机
+    智能摄像头管理器：自动优先扫描并接入外接 USB 运动相机，支持热插拔重扫与强制备选通道
     """
     def __init__(self):
         self.device_list = []
@@ -140,56 +155,100 @@ class CameraDeviceManager:
         self.probe_devices()
 
     def probe_devices(self):
-        self.device_list = []
-        print("[CameraManager] 正在扫描 Windows DirectShow 视频设备...")
-        # 扫描 0 ~ 4 端口
-        for dev_id in range(4):
+        # 释放已有句柄并留出系统响应窗口
+        if self.cap and self.cap.isOpened():
             try:
-                cap_test = cv2.VideoCapture(dev_id, cv2.CAP_DSHOW) if sys.platform.startswith('win') else cv2.VideoCapture(dev_id)
+                self.cap.release()
+            except Exception:
+                pass
+            self.cap = None
+            time.sleep(0.12)
+
+        self.device_list = []
+        print("\n[CameraManager] 正在深度扫描 Windows DirectShow 视频设备 (端口 0~5)...")
+        found_hw_count = 0
+        
+        # 扫描 0 ~ 5 端口
+        for dev_id in range(6):
+            try:
+                backend = cv2.CAP_DSHOW if sys.platform.startswith('win') else 0
+                cap_test = cv2.VideoCapture(dev_id, backend) if backend else cv2.VideoCapture(dev_id)
                 if cap_test.isOpened():
-                    ret, frame = cap_test.read()
+                    ret = False
+                    frame = None
+                    # 给硬件 3 次快速握手读帧
+                    for _ in range(3):
+                        ret, frame = cap_test.read()
+                        if ret and frame is not None:
+                            break
+                        time.sleep(0.04)
+
                     if ret and frame is not None:
                         h, w = frame.shape[:2]
                         if dev_id == 0:
                             dev_name = f"CAM 0: 机内高清镜头 ({w}x{h})"
                         else:
                             dev_name = f"CAM {dev_id}: 外接USB运动相机 ({w}x{h})"
-                        self.device_list.append((dev_id, dev_name))
+                    else:
+                        if dev_id == 0:
+                            dev_name = f"CAM 0: 机内视频设备 (端口0)"
+                        else:
+                            dev_name = f"CAM {dev_id}: 外接USB视频设备 (端口{dev_id})"
+
+                    self.device_list.append((dev_id, dev_name))
+                    found_hw_count += 1
                     cap_test.release()
+                    time.sleep(0.08)
             except Exception:
                 pass
-        
-        # 始终添加仿真源
-        self.device_list.append(("SIM", "SIM: 数字孪生高清光环境测试流"))
-        print(f"[CameraManager] 探测完成，在线设备: {self.device_list}")
 
-        # 默认优先选择外接 USB 运动相机 (如果存在 dev_id > 0 的设备)
+        # 检查是否扫描到了外接硬件相机
+        has_external_hw = any(isinstance(d[0], int) and d[0] > 0 for d in self.device_list)
+        if not has_external_hw:
+            # 补齐强制通道，允许用户在插入运动相机后随时尝试拉流
+            self.device_list.append(("FORCE_1", "CAM 1: 强制连接外接USB运动相机 (DirectShow端口1)"))
+
+        # 始终添加双仿真源
+        self.device_list.append(("SIM_STUDENT", "SIM 1: 仿真外接运动相机 (学生面部特写/眯眼应激)"))
+        self.device_list.append(("SIM_CLASSROOM", "SIM 2: 仿真教室全景视角 (面向讲台与黑板微倾)"))
+
+        print(f"[CameraManager] 探测完成，在线可用设备清单:")
+        for idx, (did, dname) in enumerate(self.device_list):
+            print(f"  [{idx}] 标识: {did} -> {dname}")
+
+        # 默认优先选择外接 USB 运动相机
         preferred_idx = 0
         for i, (d_id, _) in enumerate(self.device_list):
-            if isinstance(d_id, int) and d_id > 0:
+            if (isinstance(d_id, int) and d_id > 0) or d_id == "FORCE_1":
                 preferred_idx = i
                 break
         self.current_idx = preferred_idx
 
     def open_current_camera(self):
         if self.cap and self.cap.isOpened():
-            self.cap.release()
+            try:
+                self.cap.release()
+            except Exception:
+                pass
             self.cap = None
+            time.sleep(0.1)
 
         dev_id = self.device_list[self.current_idx][0]
-        if dev_id == "SIM":
+        if str(dev_id).startswith("SIM"):
             self.is_simulation = True
-            print("[CameraManager] 运行模式: 数字孪生仿真流")
+            print(f"[CameraManager] 切换运行模式: {self.device_list[self.current_idx][1]}")
             return True
 
+        target_port = 1 if dev_id == "FORCE_1" else dev_id
         self.is_simulation = False
         try:
-            self.cap = cv2.VideoCapture(dev_id, cv2.CAP_DSHOW) if sys.platform.startswith('win') else cv2.VideoCapture(dev_id)
+            backend = cv2.CAP_DSHOW if sys.platform.startswith('win') else 0
+            self.cap = cv2.VideoCapture(target_port, backend) if backend else cv2.VideoCapture(target_port)
             if self.cap.isOpened():
-                print(f"[CameraManager] 成功挂载硬件视频设备: {dev_id} ({self.device_list[self.current_idx][1]})")
+                print(f"[CameraManager] 成功挂载硬件视频设备: 端口 {target_port} ({self.device_list[self.current_idx][1]})")
                 return True
             else:
-                print(f"[CameraManager] 无法打开设备 {dev_id}，切入仿真流")
+                print(f"[CameraManager] 硬件端口 {target_port} 无法打开，自动切入高保真仿真流")
                 self.is_simulation = True
                 return False
         except Exception as e:
@@ -202,8 +261,24 @@ class CameraDeviceManager:
         self.open_current_camera()
         return self.device_list[self.current_idx]
 
+    def select_device_by_target(self, target_type):
+        """0: 机内, 1: 外接"""
+        for i, (did, _) in enumerate(self.device_list):
+            if target_type == 0 and did == 0:
+                self.current_idx = i
+                self.open_current_camera()
+                return self.device_list[self.current_idx]
+            elif target_type == 1 and (did == 1 or did == "FORCE_1"):
+                self.current_idx = i
+                self.open_current_camera()
+                return self.device_list[self.current_idx]
+        return self.device_list[self.current_idx]
+
     def get_current_label(self):
         return self.device_list[self.current_idx][1]
+
+    def get_device_count(self):
+        return len(self.device_list)
 
 
 class VLMClassroomControlSystemV2:
@@ -249,6 +324,12 @@ class VLMClassroomControlSystemV2:
         self.vlm_chat_history = [
             ("Qwen2.5-VL", "系统已就位。端侧特征提取器保持 60FPS 追踪，随时待命协同重塑光环境！")
         ]
+        self.vlm_hud_lines = [
+            "> MULTIMODAL PERCEPTION: Edge CV 60FPS Backbone Online",
+            "> VISION BACKBONE: Qwen2.5-VL Dual-Resolution Active",
+            "> ACTUATORS: Smart Blinds + Blackboard Wash Light Ready",
+            "> INTERACTION: Press [ENTER] or [SPACE] to input prompt"
+        ]
         self.vlm_action_logs = [
             f"[{time.strftime('%H:%M:%S')}] >>> SYSTEM INITIALIZED: Edge Vision + Qwen2.5-VL Ready",
             f"[{time.strftime('%H:%M:%S')}] >>> HARDWARE: USB Action Camera / WebCam Probed",
@@ -256,6 +337,51 @@ class VLMClassroomControlSystemV2:
         ]
         self.vlm_worker_queue = queue.Queue()
         self.is_vlm_inferring = False
+        self.running = True
+
+    def popup_input_dialog(self):
+        """
+        弹出置顶 Windows 原生中文输入框，支持中文输入法、问答与参数下发
+        """
+        try:
+            import tkinter as tk
+            from tkinter import simpledialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            user_input = simpledialog.askstring(
+                "GH-VI-2026 VLM 多模态交互输入",
+                "请输入要向 VLM 大模型 (Qwen2.5-VL) 发送的指令或提问:\n(支持中文输入法、自然语言问答与设备控制，按确定发送)",
+                initialvalue=self.user_prompt_input if self.user_prompt_input else "靠窗学生出现眯眼，请立即执行百叶窗与洗墙灯调控",
+                parent=root
+            )
+            root.destroy()
+            if user_input and user_input.strip():
+                return user_input.strip()
+        except Exception as e:
+            print("[UI Dialog Error]:", e)
+        return None
+
+    def start_console_listener(self):
+        """后台终端多线程监听，允许直接在控制台敲任意中文并回车交互"""
+        def _console_worker():
+            print("\n" + "="*72)
+            print("💬 [VLM 交互控制台已启动] 随时在终端输入任何中文提示词并按回车发送！")
+            print("   示例: '帮我把百叶窗拉下来' / '检测学生眯眼' / '提高洗墙灯'")
+            print("="*72 + "\n")
+            while self.running:
+                try:
+                    user_line = input()
+                    if user_line and user_line.strip():
+                        text = user_line.strip()
+                        print(f"\n[终端已捕获指令]: {text}")
+                        self.user_prompt_input = text
+                        self.trigger_vlm_inference_async(text)
+                except (EOFError, KeyboardInterrupt):
+                    break
+                except Exception:
+                    pass
+        threading.Thread(target=_console_worker, daemon=True).start()
 
     def load_classroom_background(self):
         paths = [
@@ -302,6 +428,16 @@ class VLMClassroomControlSystemV2:
                 self.vlm_chat_history.append((res["model"], res["reply"]))
                 if len(self.vlm_chat_history) > 4:
                     self.vlm_chat_history.pop(0)
+
+                if "hud_lines" in res:
+                    self.vlm_hud_lines = res["hud_lines"]
+
+                print("\n" + "="*72)
+                print(f"🧠 【{res['model']} 多模态因果推理响应 (成功执行)】:")
+                print(f"用户指令: \"{res['prompt']}\"")
+                print(res["thought"])
+                print(f"下发动作: {', '.join(res['actions'])}")
+                print("="*72 + "\n")
 
                 t_str = time.strftime("%H:%M:%S")
                 new_logs = [f"[{t_str}] >>> TOOL CALL: {act}" for act in res["actions"]]
@@ -516,38 +652,42 @@ class VLMClassroomControlSystemV2:
         # =====================================================================
         cv2.rectangle(canvas, (rx, 345), (1342, 745), (16, 18, 24), -1)
         cv2.rectangle(canvas, (rx, 345), (1342, 745), (140, 90, 255), 1)
-        cv2.putText(canvas, f"VLM MULTIMODAL DIALOGUE CONSOLE [{vlm_name}]", (rx + 15, 372),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (140, 90, 255), 2)
+        cv2.putText(canvas, f"VLM MULTIMODAL DIALOGUE CONSOLE [{vlm_name}]", (rx + 15, 370),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.52, (140, 90, 255), 2)
 
-        cv2.putText(canvas, "[PRESET MACROS: 1-靠窗眯眼检测 | 2-黑板眩光消除 | 3-全室光健康]", 
-                    (rx + 15, 396), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (180, 160, 230), 1)
+        cv2.putText(canvas, "[HOTKEYS: Enter/Space-中文打字 | 1/2/3-演示宏 | C-切相机 | R-重扫USB]", 
+                    (rx + 15, 392), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 160, 230), 1)
 
-        # Prompt 输入框
-        cv2.rectangle(canvas, (rx + 15, 410), (1325, 442), (28, 32, 42), -1)
-        cv2.rectangle(canvas, (rx + 15, 410), (1325, 442), (0, 255, 200), 1)
-        prompt_disp = self.user_prompt_input
-        if len(prompt_disp) > 36:
-            prompt_disp = prompt_disp[:34] + "..."
+        # Prompt 输入框 (支持键盘敲击与中文弹窗)
+        cv2.rectangle(canvas, (rx + 15, 404), (1325, 442), (28, 32, 42), -1)
+        cv2.rectangle(canvas, (rx + 15, 404), (1325, 442), (0, 255, 200), 1)
+        disp_text = ""
+        for ch in self.user_prompt_input:
+            if ord(ch) < 128:
+                disp_text += ch
+            else:
+                disp_text += "*"
+        if len(disp_text) > 34:
+            disp_text = disp_text[:32] + "..."
         cursor = "|" if (int(time.time() * 2) % 2 == 0) else ""
-        cv2.putText(canvas, f"PROMPT: {prompt_disp}{cursor}", (rx + 25, 432),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.46, (0, 255, 200), 1)
+        cv2.putText(canvas, f"PROMPT: {disp_text}{cursor}", (rx + 23, 424),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 255, 200), 1)
+        cv2.putText(canvas, ">> [PRESS ENTER OR SPACE TO POPUP CHINESE IME DIALOG] <<", (rx + 23, 437),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.30, (120, 220, 255), 1)
 
-        # VLM 思考回显气泡
-        cv2.rectangle(canvas, (rx + 15, 455), (1325, 595), (22, 24, 32), -1)
-        cv2.rectangle(canvas, (rx + 15, 455), (1325, 595), (60, 70, 90), 1)
-        cv2.putText(canvas, f"VLM REASONING STREAM ({vlm_name}):", (rx + 25, 475),
+        # VLM 思考回显气泡 (高保真无乱码 HUD 结构化行)
+        cv2.rectangle(canvas, (rx + 15, 452), (1325, 595), (22, 24, 32), -1)
+        cv2.rectangle(canvas, (rx + 15, 452), (1325, 595), (60, 70, 90), 1)
+        cv2.putText(canvas, f"VLM REASONING STREAM ({vlm_name}):", (rx + 25, 472),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.44, (255, 200, 50), 1)
 
         if self.is_vlm_inferring:
-            cv2.putText(canvas, ">>> VLM MODEL THINKING & MULTIMODAL INFERENCE IN PROGRESS ...", (rx + 25, 510),
+            cv2.putText(canvas, ">>> VLM THINKING & MULTIMODAL INFERENCE IN PROGRESS ...", (rx + 25, 510),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
         else:
-            latest_chat = self.vlm_chat_history[-1][1] if self.vlm_chat_history else "等待指令..."
-            lines = latest_chat.split("\n")
-            for idx, ln in enumerate(lines[:5]):
-                if len(ln) > 48: ln = ln[:46] + "..."
-                cv2.putText(canvas, ln, (rx + 25, 502 + idx * 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.40, (230, 230, 230), 1)
+            for idx, ln in enumerate(self.vlm_hud_lines[:5]):
+                cv2.putText(canvas, ln[:58], (rx + 25, 498 + idx * 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.38, (230, 230, 230), 1)
 
         # 实时工具调用日志
         cv2.rectangle(canvas, (rx + 15, 608), (1325, 735), (14, 16, 20), -1)
@@ -564,14 +704,20 @@ class VLMClassroomControlSystemV2:
         print(f"🚀 GH-VI-2026 VLM 光环境数字孪生主控系统 (v2.0 终极实战版) 启动！")
         print(f"• 硬件摄像头: {self.cam_mgr.get_current_label()}")
         print(f"• 核心 VLM: {self.vlm_selector.get_current()[0]}")
-        print(f"• 初始视口模式: {self.view_mode} (按 'V' 键随时切换全景数字孪生与学生面部实况)")
+        print(f"• 初始视口模式: {self.view_mode} (按 'V' 或 Tab 随时切换全景数字孪生与学生面部实况)")
+        print(f"• 快捷打字输入: 按 [Enter] 或 [Space] 唤出中文输入法弹窗！")
+        print(f"• 控制台同步: 也可直接在终端敲中文提示词按回车发送！")
         print(f"• 退出方式: 按 'Q' 键或 'ESC' 退出交互窗口")
         print(f"=======================================================\n")
+
+        # 非离线模式启动后台终端输入线程
+        if max_frames is None:
+            self.start_console_listener()
 
         last_rendered_ui = None
         f_idx = 0
 
-        while True:
+        while self.running:
             if max_frames is not None and f_idx >= max_frames:
                 break
             f_idx += 1
@@ -584,10 +730,10 @@ class VLMClassroomControlSystemV2:
             if frame is None:
                 # 备用仿真流: 自适应根据 view_mode 选择底图
                 frame = self.classroom_twin_bg.copy()
-                if f_idx >= max_frames // 2:
+                if f_idx >= (max_frames // 2 if max_frames else 60):
                     cv2.circle(frame, (200, 310), 95, (255, 255, 255), -1)
 
-            # 演示自驱测试触发
+            # 演示自驱测试触发 (前 70 帧自动演示一次，后续全交给用户自主控制)
             if f_idx == 10:
                 self.trigger_vlm_inference_async("评估初始采光环境并下发基础节能设定")
             elif f_idx == 65:
@@ -604,26 +750,47 @@ class VLMClassroomControlSystemV2:
                 cv2.imshow("GH-VI-2026 MULTIMODAL VLM CLASSROOM LIGHTING CONTROL SYSTEM v2.0", ui_canvas)
                 key = cv2.waitKey(1) & 0xFF
                 if key in [ord('q'), 27]:
+                    self.running = False
                     break
-                elif key in [ord('v'), ord('V')]:
-                    # 切换主视口模式 (STUDENT vs CLASSROOM)
+                elif key in [10, 13, 32]:  # Enter 回车键 或 Space 空格键 -> 弹出中文输入法窗口
+                    prompt = self.popup_input_dialog()
+                    if prompt:
+                        self.user_prompt_input = prompt
+                        self.trigger_vlm_inference_async(self.user_prompt_input)
+                elif key in [8, 127]:      # Backspace 退格键 -> 删除输入框最后一个字符
+                    if len(self.user_prompt_input) > 0:
+                        self.user_prompt_input = self.user_prompt_input[:-1]
+                elif key in [ord('v'), ord('V'), 9]: # V 键 或 Tab 键 (9) -> 切换视口
                     self.view_mode = "CLASSROOM" if self.view_mode == "STUDENT" else "STUDENT"
-                    print(f"[UI] 用户切换左侧主视口模式为: {self.view_mode}")
-                elif key in [ord('c'), ord('C')]:
+                    print(f"\n[UI 视口切换] 当前主视口: {self.view_mode}")
+                elif key in [ord('c'), ord('C')]:    # C 键 -> 切换摄像头
                     new_cam = self.cam_mgr.next_device()
-                    print(f"[UI] 用户切换摄像头设备为: {new_cam[1]}")
-                elif key in [ord('m'), ord('M')]:
+                    print(f"\n[UI 摄像头切换] 当前设备: {new_cam[1]}")
+                elif key in [ord('r'), ord('R')]:    # R 键 -> 深度重新扫描视频设备
+                    print(f"\n[UI] 正在重新扫描硬件设备 (请确保运动相机处于摄像头模式)...")
+                    self.cam_mgr.probe_devices()
+                    self.cam_mgr.open_current_camera()
+                    print(f"[UI] 重新扫描完成！当前挂载: {self.cam_mgr.get_current_label()}")
+                elif key in [ord('m'), ord('M')]:    # M 键 -> 切换 VLM 模型
                     new_model = self.vlm_selector.next_model()
-                    print(f"[UI] 用户切换 VLM 模型为: {new_model[0]}")
-                elif key == ord('1'):
+                    print(f"\n[UI 模型切换] 当前视觉大模型: {new_model[0]}")
+                elif key == ord('0'):                # 0 键 -> 直切机内镜头
+                    new_cam = self.cam_mgr.select_device_by_target(0)
+                    print(f"\n[UI 直切机内镜头] {new_cam[1]}")
+                elif key in [ord('9'), ord('o'), ord('O')]:  # 9 键 -> 直切外接 USB 运动相机
+                    new_cam = self.cam_mgr.select_device_by_target(1)
+                    print(f"\n[UI 直切外接运动相机] {new_cam[1]}")
+                elif key == ord('1'):                # 1 键 -> 宏场景 1
                     self.user_prompt_input = "场景1: 靠窗学生眯眼应激，要求百叶窗下调并洗墙灯补偿"
                     self.trigger_vlm_inference_async(self.user_prompt_input)
-                elif key == ord('2'):
-                    self.user_prompt_input = "场景2: 黑板高光白斑消除，自适应洗墙灯功率提升"
+                elif key == ord('2'):                # 2 键 -> 宏场景 2
+                    self.user_prompt_input = "场景2: 黑板高光白斑消除，自适应洗墙灯功率提升至 220W"
                     self.trigger_vlm_inference_async(self.user_prompt_input)
-                elif key == ord('3'):
+                elif key == ord('3'):                # 3 键 -> 宏场景 3
                     self.user_prompt_input = "场景3: 全室光照健康闭环诊断，维持微倾姿态节能运转"
                     self.trigger_vlm_inference_async(self.user_prompt_input)
+                elif 32 < key <= 126:               # 直接敲键盘打英文字符/数字
+                    self.user_prompt_input += chr(key)
             except Exception:
                 pass
 
