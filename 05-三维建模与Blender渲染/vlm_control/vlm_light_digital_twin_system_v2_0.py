@@ -559,17 +559,22 @@ class VLMClassroomControlSystemV2:
 
         return canvas
 
-    def run(self, max_frames=120, headless_save=None):
+    def run(self, max_frames=None, headless_save=None):
         print(f"\n=======================================================")
         print(f"🚀 GH-VI-2026 VLM 光环境数字孪生主控系统 (v2.0 终极实战版) 启动！")
         print(f"• 硬件摄像头: {self.cam_mgr.get_current_label()}")
         print(f"• 核心 VLM: {self.vlm_selector.get_current()[0]}")
         print(f"• 初始视口模式: {self.view_mode} (按 'V' 键随时切换全景数字孪生与学生面部实况)")
+        print(f"• 退出方式: 按 'Q' 键或 'ESC' 退出交互窗口")
         print(f"=======================================================\n")
 
         last_rendered_ui = None
+        f_idx = 0
 
-        for f_idx in range(max_frames):
+        while True:
+            if max_frames is not None and f_idx >= max_frames:
+                break
+            f_idx += 1
             frame = None
             if self.cam_mgr.cap and self.cam_mgr.cap.isOpened():
                 ret, raw_f = self.cam_mgr.cap.read()
@@ -640,5 +645,13 @@ if __name__ == "__main__":
     if not os.path.exists(os.path.dirname(out_preview)):
         out_preview = r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_v2_0_vlm_lighting_system.png"
 
+    # 判断是否为无头模式或预览模式
+    is_headless = ("--preview" in sys.argv) or ("--headless" in sys.argv) or (not sys.platform.startswith('win') and not os.environ.get("DISPLAY"))
+
     app = VLMClassroomControlSystemV2()
-    app.run(max_frames=110, headless_save=out_preview)
+    if is_headless:
+        print("[System] 运行在离线预览生成模式 (渲染 110 帧并保存截图)...")
+        app.run(max_frames=110, headless_save=out_preview)
+    else:
+        print("[System] 运行在实机持续交互模式 (按 Q 或 ESC 退出)...")
+        app.run(max_frames=None, headless_save=out_preview)
