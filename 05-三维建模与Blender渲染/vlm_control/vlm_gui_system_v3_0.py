@@ -276,6 +276,15 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.blinds_pct = 15.0         # 电动百叶窗遮阳比例
         self.view_is_student = True    # True: 学生视角主视口, False: 教室全景主视口
 
+        # ---------------------------------------------------------------------
+        # 黑板机构动力学与连续阻尼物理变量 (Lerp 60FPS)
+        # ---------------------------------------------------------------------
+        self.cur_board_yaw = 4.5       # 当前微倾偏航角度 (0.0° ~ 4.5°)
+        self.target_board_yaw = 4.5    # 目标微倾偏航角度 (展示态 4.5°, 常规态 0.0°)
+        self.cur_hinge_disp = 45.0     # 当前双连杆伸出行程 (0.0mm ~ 45.0mm)
+        self.target_hinge_disp = 45.0  # 目标双连杆伸出行程
+        self.last_bg_reload_time = 0.0 # 动态渲染帧热重载时间戳
+
         # 载入 Blender 教室全景底图
         self.classroom_bg = None
         self.load_classroom_bg()
@@ -319,20 +328,196 @@ class VLMClassroomDashboardV3(QMainWindow):
         ))
 
     def load_classroom_bg(self):
+        """加载 Blender 3D 教室视口图 (支持 Windows 中文路径 imdecode 与动态帧实时热更)"""
+        live_dyn_paths = [
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\live_blender_frame.png",
+            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/live_blender_frame.png"
+        ]
+        for p in live_dyn_paths:
+            if os.path.exists(p):
+                try:
+                    img = cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    if img is not None and img.shape[0] > 100:
+                        self.classroom_bg = img
+                        return
+                except Exception:
+                    pass
+
         sim_paths = [
             r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_sim_v2_overview.png",
-            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/preview_sim_v2_overview.png"
+            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/preview_sim_v2_overview.png",
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_view_classroom_pip.png"
         ]
         for p in sim_paths:
             if os.path.exists(p):
                 try:
-                    self.classroom_bg = cv2.imread(p)
-                    break
+                    img = cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    if img is not None and img.shape[0] > 100:
+                        self.classroom_bg = img
+                        return
                 except Exception:
                     pass
+
         if self.classroom_bg is None:
             self.classroom_bg = np.zeros((720, 1280, 3), dtype=np.uint8)
             self.classroom_bg[:] = (40, 48, 56)
+
+    def render_dynamic_classroom_view(self, target_w=1280, target_h=720):
+        """
+        高帧率 3D 动力学连续阻尼物理运动仿真引擎 (Lerp 60FPS)
+        根据当前微倾角度与双连杆行程，实时生成 3D 透视偏转、机械伸缩、反射锥偏折与动力学 HUD
+        """
+        # 1. 尝试热重载外部 Blender 导出的最新渲染帧
+        now = time.time()
+        if now - getattr(self, "last_bg_reload_time", 0.0) > 1.0:
+            self.last_bg_reload_time = now
+            live_path = r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\live_blender_frame.png"
+            if not os.path.exists(live_path):
+                live_path = r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/live_blender_frame.png"
+            if os.path.exists(live_path):
+                try:
+                    img = cv2.imdecode(np.fromfile(live_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    if img is not None and img.shape[0] > 100:
+                        self.classroom_bg = img
+                except Exception:
+                    pass
+
+        # 2. 指数平滑阻尼缓动插值 (Exponential Lerp, 杜绝跳变)
+        diff_yaw = self.target_board_yaw - self.cur_board_yaw
+        diff_hinge = self.target_hinge_disp - self.cur_hinge_disp
+        self.cur_board_yaw += diff_yaw * 0.14
+        self.cur_hinge_disp += diff_hinge * 0.14
+
+        # 保护边界
+        self.cur_board_yaw = max(0.0, min(5.0, self.cur_board_yaw))
+        self.cur_hinge_disp = max(0.0, min(50.0, self.cur_hinge_disp))
+        progress = max(0.0, min(1.0, self.cur_board_yaw / 4.5))
+
+        # 3. 获取基础画布
+        canvas = self.classroom_bg.copy() if self.classroom_bg is not None else np.zeros((720, 1280, 3), dtype=np.uint8)
+        ch, cw = canvas.shape[:2]
+
+        # 黑板活动扇区在 1280x720 基准图中的像素 ROI (左固定主轴 x0, 右动端 x1)
+        x0, y0 = int(cw * 0.344), int(ch * 0.319)  # 约 440, 230
+        x1, y1 = int(cw * 0.656), int(ch * 0.597)  # 约 840, 430
+
+        # 计算右侧向近端推出与微倾产生的 3D 透视梯形位移
+        dx = int(progress * 18)      # 右边缘向内侧透视收缩投影
+        dy_top = int(progress * 15)  # 顶边向上微倾扬起
+        dy_bot = int(progress * 12)  # 底边微倾下沉
+
+        if y1 > y0 and x1 > x0 and y1 <= ch and x1 <= cw:
+            board_roi = canvas[y0:y1, x0:x1]
+            bh, bw = board_roi.shape[:2]
+
+            src_pts = np.float32([
+                [0, 0],
+                [bw, 0],
+                [bw, bh],
+                [0, bh]
+            ])
+            dst_pts = np.float32([
+                [x0, y0],
+                [x1 - dx, y0 - dy_top],
+                [x1 - dx, y1 + dy_bot],
+                [x0, y1]
+            ])
+
+            # 3D 透视投影变换
+            M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+            warped = cv2.warpPerspective(board_roi, M, (cw, ch))
+
+            # 蒙版贴合
+            mask = np.zeros((ch, cw), dtype=np.uint8)
+            poly = np.int32([dst_pts])
+            cv2.fillPoly(mask, poly, 255)
+            np.copyto(canvas, warped, where=(mask[:, :, None] > 0))
+
+            # 绘制黑板 3D 立体金属包边与微倾反光倒角
+            edge_color = (0, 215, 255) if progress > 0.8 else ((0, 255, 128) if progress > 0.2 else (100, 140, 180))
+            cv2.polylines(canvas, poly, isClosed=True, color=edge_color, thickness=2, lineType=cv2.LINE_AA)
+
+            # 绘制右侧 3D 金属厚度立体截面
+            if progress > 0.04:
+                thick_pts = np.int32([
+                    [x1 - dx, y0 - dy_top],
+                    [x1 - dx + int(progress * 10), y0 - dy_top + 3],
+                    [x1 - dx + int(progress * 10), y1 + dy_bot - 3],
+                    [x1 - dx, y1 + dy_bot]
+                ])
+                cv2.fillPoly(canvas, [thick_pts], (30, 45, 60))
+                cv2.polylines(canvas, [thick_pts], isClosed=True, color=(100, 140, 180), thickness=1, lineType=cv2.LINE_AA)
+
+                # 绘制双连杆伸缩执行器 (Telescopic Actuator Rods)
+                rod_base_x = x1 + 18
+                rod_y_top = y0 + 35
+                rod_y_bot = y1 - 35
+                rod_tip_x = x1 - dx + int(progress * 10)
+
+                # 顶部与底部双活塞推杆
+                cv2.line(canvas, (rod_base_x, rod_y_top), (rod_tip_x, y0 - dy_top + 35), (220, 230, 245), 4, lineType=cv2.LINE_AA)
+                cv2.circle(canvas, (rod_tip_x, y0 - dy_top + 35), 4, (0, 215, 255), -1)
+                cv2.circle(canvas, (rod_base_x, rod_y_top), 5, (100, 120, 150), -1)
+
+                cv2.line(canvas, (rod_base_x, rod_y_bot), (rod_tip_x, y1 + dy_bot - 35), (220, 230, 245), 4, lineType=cv2.LINE_AA)
+                cv2.circle(canvas, (rod_tip_x, y1 + dy_bot - 35), 4, (0, 215, 255), -1)
+                cv2.circle(canvas, (rod_base_x, rod_y_bot), 5, (100, 120, 150), -1)
+
+                # 连杆行程数字指示
+                cv2.putText(canvas, f"Actuator: {self.cur_hinge_disp:.1f}mm", (x1 - dx + 15, (y0 + y1)//2),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 215, 255), 1, cv2.LINE_AA)
+
+            # 光学反射锥与防眩避光导向
+            board_cx = int((x0 + x1 - dx) / 2)
+            board_cy = int((y0 + y1) / 2)
+
+            if progress < 0.25:
+                # 常规态: 刺眼高光过曝斑 + 射向学生坐席直射光锥 (红色警示)
+                cv2.circle(canvas, (board_cx, board_cy), 22, (255, 255, 255), -1)
+                cv2.circle(canvas, (board_cx, board_cy), 36, (0, 215, 255), 2)
+                cv2.arrowedLine(canvas, (board_cx, board_cy), (board_cx - 130, board_cy + 170),
+                                (0, 0, 255), 3, line_type=cv2.LINE_AA, tipLength=0.15)
+                cv2.putText(canvas, "[WARN: Specular Glare -> Student Eyes]", (board_cx - 230, board_cy + 150),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 0, 255), 1, cv2.LINE_AA)
+            else:
+                # 黄金微倾态: 反射锥向上平滑折射偏转至天花板 (青绿安全光锥)
+                ceiling_target = (board_cx + 70, y0 - 95)
+                cv2.arrowedLine(canvas, (board_cx, board_cy), ceiling_target,
+                                (0, 255, 128), 3, line_type=cv2.LINE_AA, tipLength=0.15)
+                cv2.putText(canvas, f"[SAFE: Specular Beam -> Ceiling (Tilt {self.cur_board_yaw:.1f}deg)]",
+                            (board_cx - 90, y0 - 105), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 255, 128), 1, cv2.LINE_AA)
+
+            # 叠加专业动力学 HUD 仪表板
+            hud_x, hud_y = max(20, x0 - 30), max(20, y0 - 75)
+            cv2.rectangle(canvas, (hud_x, hud_y), (hud_x + 390, hud_y + 55), (15, 23, 42), -1)
+            cv2.rectangle(canvas, (hud_x, hud_y), (hud_x + 390, hud_y + 55), (0, 215, 255), 1)
+
+            # 动力学步进遥测信息
+            status_text = f"BOARD YAW: {self.cur_board_yaw:.2f}deg / 4.50deg | STROKE: {self.cur_hinge_disp:.1f}mm"
+            if progress > 0.95:
+                lock_text = "[LOCKED: 4.5deg ANTI-GLARE MICRO-TILT]"
+                lock_color = (0, 255, 128)
+            elif progress < 0.05:
+                lock_text = "[RETRACTED: 0.0deg FLAT POSITION]"
+                lock_color = (148, 163, 184)
+            else:
+                lock_text = "[STEPPING: 60FPS SMOOTH EXP-LERP DYNAMICS]"
+                lock_color = (0, 215, 255)
+
+            cv2.putText(canvas, status_text, (hud_x + 12, hud_y + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (226, 232, 240), 1, cv2.LINE_AA)
+            cv2.putText(canvas, lock_text, (hud_x + 12, hud_y + 44), cv2.FONT_HERSHEY_SIMPLEX, 0.45, lock_color, 1, cv2.LINE_AA)
+
+            # 绘制偏角进度微调条 (Progress Bar)
+            bar_w = 120
+            bar_x = hud_x + 255
+            bar_y = hud_y + 35
+            cv2.rectangle(canvas, (bar_x, bar_y), (bar_x + bar_w, bar_y + 8), (51, 65, 85), -1)
+            cv2.rectangle(canvas, (bar_x, bar_y), (bar_x + int(bar_w * progress), bar_y + 8), lock_color, -1)
+
+        # 4. 调整到目标输出分辨率
+        if target_w != cw or target_h != ch:
+            return cv2.resize(canvas, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+        return canvas
 
     def apply_dark_theme(self):
         """注入高科技暗黑风格 QSS 样式表"""
@@ -693,18 +878,22 @@ class VLMClassroomDashboardV3(QMainWindow):
             self.txt_reasoning.append("<span style='color:#94A3B8;'>[自适应感知]</span> 连续自主推理心跳已暂停，切换为手动/指令驱动。")
 
     def toggle_display_state(self):
-        """切换黑板展示态 (展开关键帧) 与常规态"""
+        """切换黑板展示态 (展开关键帧) 与常规态 (连续阻尼运动驱动)"""
         self.board_display_mode = not self.board_display_mode
         if self.board_display_mode:
+            self.target_board_yaw = 4.5
+            self.target_hinge_disp = 45.0
             self.btn_display_state.setText("黑板展示态: [已展开锁定]")
             self.btn_display_state.setStyleSheet("background-color: #065F46; border: 1.5px solid #10B981; color: #ECFDF5;")
             self.sync_ipc_state("用户触发黑板展示态展开关键帧动画")
-            self.txt_reasoning.append("<span style='color:#10B981;'>[黑板机构动作]</span> 展开关键帧动画平滑步进中，锁定 4.5° 黄金防眩态！")
+            self.txt_reasoning.append("<span style='color:#10B981;'>[黑板机构动作]</span> 连续阻尼展开中: 锁定 4.5° 黄金微倾抗眩态，双连杆推出 45mm，反射锥上导天花板！")
         else:
+            self.target_board_yaw = 0.0
+            self.target_hinge_disp = 0.0
             self.btn_display_state.setText("黑板常规态: [收拢就位]")
             self.btn_display_state.setStyleSheet("background-color: #1E293B; border: 1.5px solid #475569; color: #94A3B8;")
             self.sync_ipc_state("用户触发黑板收拢常规态")
-            self.txt_reasoning.append("<span style='color:#94A3B8;'>[黑板机构动作]</span> 平滑收拢至常规平面位置。")
+            self.txt_reasoning.append("<span style='color:#94A3B8;'>[黑板机构动作]</span> 连续阻尼平滑收拢至 0.0° 常规平面位置，双连杆复位 0mm。")
 
     def toggle_view_mode(self):
         """切换主视口与画中画 (学生特写 vs Blender 全景)"""
@@ -725,9 +914,15 @@ class VLMClassroomDashboardV3(QMainWindow):
     def trigger_macro(self, macro_id):
         macros = {
             1: "场景1: 靠窗学生出现眯眼应激，要求百叶窗下放并洗墙灯补偿",
-            2: "场景2: 黑板出现强烈反光白斑，启动天花板无影灯相消算法，功率提升至 220W",
+            2: "场景2: 黑板出现强烈反光白斑，启动天花板无影灯相消算法，功率提升至 220W 并锁定 4.5° 黄金微倾",
             3: "场景3: 全室光照健康均匀，维持微倾姿态，天花板光源进入绿色节能模式"
         }
+        if macro_id in [1, 2]:
+            self.board_display_mode = True
+            self.target_board_yaw = 4.5
+            self.target_hinge_disp = 45.0
+            self.btn_display_state.setText("黑板展示态: [已展开锁定]")
+            self.btn_display_state.setStyleSheet("background-color: #065F46; border: 1.5px solid #10B981; color: #ECFDF5;")
         text = macros.get(macro_id, "")
         self.trigger_stream_inference(source_tag=f"演示宏 #{macro_id}", prompt_text=text)
 
@@ -1017,6 +1212,9 @@ class VLMClassroomDashboardV3(QMainWindow):
             "algorithm_mode": "OPENCV" if self.rb_opencv.isChecked() else "QWEN2.5-VL",
             "blackboard_display_mode": self.board_display_mode,
             "blackboard_fixed_yaw_deg": 4.5,
+            "target_board_yaw_deg": float(self.target_board_yaw),
+            "current_board_yaw_deg": float(self.cur_board_yaw),
+            "hinge_stroke_mm": float(self.cur_hinge_disp),
             "shadowless_wash_light_w": float(self.wash_light_w),
             "shadowless_wash_angle_deg": float(self.wash_angle),
             "smart_blinds_pct": float(self.blinds_pct),
@@ -1030,18 +1228,18 @@ class VLMClassroomDashboardV3(QMainWindow):
             pass
 
     def on_frame_ready(self, frame, metrics):
-        """接收子线程的高帧率画面并渲染于 QLabel"""
+        """接收子线程的高帧率画面并渲染于 QLabel (带 3D 物理运动与画中画合成)"""
         self.latest_metrics = metrics
         self.latest_raw_frame = frame.copy()
         h_f, w_f = frame.shape[:2]
 
-        # 准备主视口与画中画合成
+        # 准备主视口与画中画合成 (带 60FPS 连续阻尼 3D 机械展开)
         if self.view_is_student:
             main_bgr = frame
-            pip_source = cv2.resize(self.classroom_bg, (320, 180)) if self.classroom_bg is not None else np.zeros((180, 320, 3), dtype=np.uint8)
-            pip_tag = "[PIP: Blender教室全景 (按V切换)]"
+            pip_source = self.render_dynamic_classroom_view(320, 180)
+            pip_tag = f"[PIP: 3D黑板机构联动 (微倾 {self.cur_board_yaw:.1f}°)]"
         else:
-            main_bgr = cv2.resize(self.classroom_bg, (w_f, h_f)) if self.classroom_bg is not None else frame
+            main_bgr = self.render_dynamic_classroom_view(w_f, h_f)
             pip_source = cv2.resize(frame, (320, 180))
             pip_tag = "[PIP: 学生摄像头实况 (按V切换)]"
 
@@ -1070,9 +1268,11 @@ class VLMClassroomDashboardV3(QMainWindow):
         glare_val = metrics.get("glare_area", 0)
         lux_val = metrics.get("lux", 420)
         squint_tag = "【眯眼应激预警】" if metrics.get("is_squint") else "【眼部舒适健康】"
+        tilt_status = "黄金防眩展开态" if self.cur_board_yaw > 2.0 else "常规收拢态"
         self.lbl_telemetry.setText(
             f"实时感知遥测: EAR={ear_val:.2f} {squint_tag} | 眩光面积={glare_val}px (~{lux_val}lx) | "
-            f"顶部无影灯功率={int(self.wash_light_w)}W | 百叶窗={int(self.blinds_pct)}%"
+            f"无影灯={int(self.wash_light_w)}W | 百叶窗={int(self.blinds_pct)}% | "
+            f"黑板微倾={self.cur_board_yaw:.1f}° ({tilt_status}) | 连杆={self.cur_hinge_disp:.1f}mm"
         )
 
     def keyPressEvent(self, event):

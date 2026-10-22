@@ -1,9 +1,12 @@
 {
-  "timestamp": "2026-10-22 00:02:37",
+  "timestamp": "2026-10-22 01:40:37",
   "camera_active": "[CAM 1] DJI Osmo Action 5 Pro (1280x720, 已连接)",
   "algorithm_mode": "QWEN2.5-VL",
   "blackboard_display_mode": true,
   "blackboard_fixed_yaw_deg": 4.5,
+  "target_board_yaw_deg": 4.5,
+  "current_board_yaw_deg": 4.499999999999997,
+  "hinge_stroke_mm": 44.99999999999998,
   "shadowless_wash_light_w": 220.0,
   "shadowless_wash_angle_deg": 45.0,
   "smart_blinds_pct": 70.0,
