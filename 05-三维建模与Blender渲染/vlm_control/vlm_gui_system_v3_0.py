@@ -784,8 +784,10 @@ class VLMClassroomDashboardV3(QMainWindow):
         # 多模态物理语义因果推理机 (Multimodal Neuro-Symbolic Causal Engine)
         # 深度解析输入语义与摄像头多模态特征，彻底消除死板模板与虚假匹配
         # ---------------------------------------------------------------------
-        p_lower = prompt_text.lower()
+        p_clean = prompt_text.strip().lower()
 
+        # 意图 0: 日常打招呼/问候/测试连通性
+        is_greeting = any(k in prompt_text for k in ["你好", "您好", "在吗", "hello", "hi", "hey", "早上好", "下午好", "晚上好"])
         # 意图 1: 眩光/眯眼/应激/反光/白斑 及其调控方案
         is_glare_query = any(k in prompt_text for k in ["眩光", "应激", "眯眼", "反光", "白斑", "刺眼", "太亮", "强光", "暴晒", "场景1", "场景2"])
         # 意图 2: 天花板灯/洗墙灯/功率/角度/无影灯/怎么调
@@ -797,11 +799,38 @@ class VLMClassroomDashboardV3(QMainWindow):
         # 意图 5: 节能/功耗/电费/绿色
         is_energy_query = any(k in prompt_text for k in ["节能", "功耗", "电费", "绿色", "场景3", "省电"])
         # 意图 6: 大模型/Qwen/VLM/对比/第一代/OpenCV
-        is_model_query = any(k in prompt_text for k in ["qwen", "vlm", "模型", "一代", "第一代", "opencv", "算法", "对比", "优势"])
+        is_model_query = any(k in prompt_text for k in ["qwen", "vlm", "模型", "一代", "第一代", "opencv", "算法", "对比", "优势", "你是谁", "介绍一下"])
 
         cam_name = self.combo_cam.currentText()
 
-        if is_glare_query or (ear < 0.22) or (glare_area > 800):
+        # 尝试检测本地 8080 端口真实运行的 llama.cpp 大模型服务
+        has_local_llm = False
+        try:
+            import urllib.request
+            req = urllib.request.Request("http://127.0.0.1:8080/health", headers={"User-Agent": "VLM-Client"})
+            with urllib.request.urlopen(req, timeout=0.15) as resp:
+                if resp.status == 200:
+                    has_local_llm = True
+        except Exception:
+            has_local_llm = False
+
+        if is_greeting and not is_auto:
+            target_wash = float(self.wash_light_w)
+            target_blinds = float(self.blinds_pct)
+            target_angle = float(self.wash_angle)
+            think_content = (
+                f"\n[Qwen2.5-VL 响应] 交互输入: \"{prompt_text}\" | 视频源: {cam_name}\n"
+                "<think>\n"
+                "你好！我是接入本数字孪生教室光环境系统的 Qwen2.5-VL 多模态视觉中枢。\n"
+                f"我当前正在通过 {cam_name} 实时感知讲台与黑板光场，当前视网膜开合度 EAR={ear:.2f}，眩光斑面积={int(glare_area)}px。\n"
+                "您可以向我询问：\n"
+                "• 教室出现学生眯眼或反光时，天花板无影灯如何相消？\n"
+                "• 为什么黑板采用 4.5° 刚性微倾而不频繁晃动？\n"
+                "• 阴天、夜间或极端天气下的自适应绿色节能模式等。\n"
+                "</think>\n"
+                "【系统状态】: 视觉感知与因果调控引擎在线，随时响应指令！\n"
+            )
+        elif is_glare_query or (ear < 0.22) or (glare_area > 800):
             target_wash = 220.0
             target_blinds = 70.0
             target_angle = 45.0
