@@ -798,14 +798,30 @@ class VLMClassroomDashboardV3(QMainWindow):
                     import json
                     img_b64 = ""
                     if hasattr(self, "latest_raw_frame") and self.latest_raw_frame is not None:
-                        # 缩放到 480x270 加速 ViT 视觉 Token 编码
-                        small = cv2.resize(self.latest_raw_frame, (480, 270))
-                        _, buf = cv2.imencode('.jpg', small, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+                        # 提升到 640x360 高清画质并保持清晰细节，便于 ViT 辨识五官与眼部
+                        small = cv2.resize(self.latest_raw_frame, (640, 360))
+                        _, buf = cv2.imencode('.jpg', small, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
                         img_b64 = base64.b64encode(buf).decode('utf-8')
 
+                    # 提取端侧视觉特征先验 (端云协同核心技术支撑)
+                    telemetry_prior = f"[端侧遥测先验: 实时眼裂 EAR={ear:.2f} ({'自然睁眼' if ear>=0.22 else '疑似眯眼'}), 画面反光面积={int(glare_area)}px (~{lux}lx)]"
+
+                    # 智能区分提问类型: 课题控光 vs 通用视觉观察
+                    is_lighting_context = any(k in prompt_text for k in ["光", "灯", "眩光", "反光", "照度", "百叶窗", "环境", "应激", "调节", "洗墙"])
+                    if is_lighting_context:
+                        sys_prompt = (
+                            f"你是由通义千问开源的 Qwen2.5-VL 多模态视觉大模型，正挂接在智慧教室中枢。{telemetry_prior}。\n"
+                            f"请结合当前你真正看到的摄像头图片内容，回答提问: {prompt_text}。\n"
+                            f"若需要调节光环境，请明确给出天花板洗墙灯(140W~220W)与百叶窗升降的具体动作。"
+                        )
+                    else:
+                        sys_prompt = (
+                            f"你是由通义千问开源的 Qwen2.5-VL 多模态视觉大模型。你正通过摄像头高清观察现场。{telemetry_prior}。\n"
+                            f"请像一个聪明、敏锐、具备高超视觉洞察力的多模态 AI 一样，幽默、自然、真实地回答用户提问: {prompt_text}。\n"
+                            f"仔细辨别画面中人物的神态、五官、眼睛状态(是睁着还是闭着)、穿着装扮与背景物体。非光环境问题不要生硬背诵洗墙灯和百叶窗。"
+                        )
+
                     content_list = []
-                    # 组合系统先验与用户指令
-                    sys_prompt = f"你是由通义千问开源的 Qwen2.5-VL 多模态视觉大模型，正挂接在智慧教室中枢 ({cam_name})。请结合当前你真正看到的摄像头图片内容，回答提问: {prompt_text}。如果是分析光环境，请指出是否需要调节洗墙灯(140W~220W)和百叶窗。"
                     content_list.append({"type": "text", "text": sys_prompt})
                     if img_b64:
                         content_list.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}})
@@ -813,7 +829,7 @@ class VLMClassroomDashboardV3(QMainWindow):
                     payload = {
                         "messages": [{"role": "user", "content": content_list}],
                         "max_tokens": 200,
-                        "temperature": 0.6
+                        "temperature": 0.5
                     }
 
                     req = urllib.request.Request(
