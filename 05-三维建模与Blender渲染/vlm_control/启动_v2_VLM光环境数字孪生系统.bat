@@ -1,6 +1,6 @@
 @echo off
 rem ==============================================================================
-rem GH-VI-2026 VLM Digital Twin Control System v2.0 (GBK Native)
+rem GH-VI-2026 VLM Digital Twin Control System v2.0
 rem ==============================================================================
 chcp 936 > nul
 title GH-VI-2026 多模态VLM数字孪生光环境控制系统 v2.0
@@ -11,35 +11,14 @@ echo        GH-VI-2026 多模态 VLM 教室光环境数字孪生主控系统 (v2.0 终极实战版)
 echo ==============================================================================
 echo.
 
-set "PY_EXE="
+set "PY_EXE=C:\Program Files\Python310\python.exe"
 
-rem 优先使用预装完备 OpenCV 与 NumPy 库的 Python 3.10 生产环境 (杜绝 Python 3.14 的 DLL 冲突)
-if exist "C:\Program Files\Python310\python.exe" (
-    set "PY_EXE=C:\Program Files\Python310\python.exe"
-    goto :LAUNCH
-)
-
-if exist "C:\Users\Lenovo\AppData\Local\Programs\Python\Python310\python.exe" (
-    set "PY_EXE=C:\Users\Lenovo\AppData\Local\Programs\Python\Python310\python.exe"
-    goto :LAUNCH
-)
-
-where python >nul 2>&1
-if %errorlevel% equ 0 (
-    set "PY_EXE=python"
-    goto :LAUNCH
-)
-
-if exist "C:\Users\Lenovo\AppData\Local\Programs\Python\Python314\python.exe" (
-    set "PY_EXE=C:\Users\Lenovo\AppData\Local\Programs\Python\Python314\python.exe"
-    goto :LAUNCH
-)
-
-:LAUNCH
-if "%PY_EXE%"=="" (
-    echo [错误] 未在系统中检测到 Python，请检查 Python 安装路径！
-    pause
-    exit /b 1
+if not exist "%PY_EXE%" (
+    if exist "C:\Users\Lenovo\AppData\Local\Programs\Python\Python310\python.exe" (
+        set "PY_EXE=C:\Users\Lenovo\AppData\Local\Programs\Python\Python310\python.exe"
+    ) else (
+        set "PY_EXE=python"
+    )
 )
 
 echo [OK] 锁定高兼容视觉引擎: %PY_EXE%
@@ -49,7 +28,7 @@ echo   - 按 [Enter] 或 [Space]: 唤起中文输入法弹窗，自由打字与 VLM 交流！
 echo   - 控制台直输: 也可直接在本命令行窗口敲任意中文并按回车直接发送！
 echo   - 按 [C] 键: 循环切换摄像头设备 (机内镜头 / 外接运动相机 / 仿真流)
 echo   - 按 [R] 键: 深度重新扫描 USB 视频设备 (若刚插运动相机，请在相机屏选Webcam按R)
-echo   - 按 [0] 键: 直切机内镜头 | 按 [9] 键: 直切外接 USB 运动相机
+echo   - 按 [0] 键: 直切机内镜头  /  按 [9] 键: 直切外接 USB 运动相机
 echo   - 按 [V] 或 [Tab] 键: 自由切换左视口 (学生实况面部/眯眼 vs Blender教室全景)
 echo   - 按 [M] 键: 切换 VLM 视觉大模型 (Qwen2.5-VL / MiniCPM-V 2.6 / InternVL 2.5)
 echo   - 按 [1][2][3] 键: 一键触发评委演示宏 (靠窗眯眼遮阳 / 板面反光加力 / 节能闭环)
@@ -60,7 +39,7 @@ echo 正在拉起交互窗口，请稍候...
 echo.
 
 cd /d "D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control"
-"%PY_EXE%" vlm_light_digital_twin_system_v2_0.py
+"%PY_EXE%" vlm_light_digital_twin_system_v2_0.py %*
 
 if %errorlevel% neq 0 (
     echo.

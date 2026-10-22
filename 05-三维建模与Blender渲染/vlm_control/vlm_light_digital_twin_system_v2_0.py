@@ -33,6 +33,14 @@ import sys
 import threading
 import queue
 
+# 强制将标准输出与标准错误设置为容错编码，防止 Windows 控制台因特殊符号或表情符崩溃
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(errors='replace')
+        sys.stderr.reconfigure(errors='replace')
+    except Exception:
+        pass
+
 # 共享状态文件路径 (与 Blender 3D 同步)
 STATE_FILE = r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\live_control_state.json"
 if not os.path.exists(os.path.dirname(STATE_FILE)):
@@ -89,7 +97,7 @@ class VLMEngineSelector:
             ]
             reply = (
                 f"{thought}\n"
-                f"👉 动作下发: 降低电动百叶窗至 {blinds_pct}% 拦截侧窗强光；黑板洗墙灯加力至 {wash_light_w}W 消除反光死角，板书对比度恢复至 {contrast_ratio}！"
+                f"[动作下发]: 降低电动百叶窗至 {blinds_pct}% 拦截侧窗强光；黑板洗墙灯加力至 {wash_light_w}W 消除反光死角，板书对比度恢复至 {contrast_ratio}！"
             )
             hud_lines = [
                 f"> MULTIMODAL PERCEPTION: Glare Area={glare_area}px | Retinal Lux~{lux_est}lx",
@@ -114,7 +122,7 @@ class VLMEngineSelector:
                 f"api_set_smart_blinds(shading={blinds_pct}%, angle={slat_angle}°)",
                 f"api_set_wall_wash_light(power={wash_light_w}W, cct={cct}K)"
             ]
-            reply = f"{thought}\n👉 动作下发: 保持常态采光与微倾锁定，综合能耗降低 42%！"
+            reply = f"{thought}\n[动作下发]: 保持常态采光与微倾锁定，综合能耗降低 42%！"
             hud_lines = [
                 f"> MULTIMODAL PERCEPTION: Uniform Daylighting | Ambient Lux~{lux_est}lx",
                 f"> PHYSIOLOGICAL EAR={ear:.2f} [HEALTHY & COMFORTABLE OCULAR RANGE]",
@@ -366,7 +374,7 @@ class VLMClassroomControlSystemV2:
         """后台终端多线程监听，允许直接在控制台敲任意中文并回车交互"""
         def _console_worker():
             print("\n" + "="*72)
-            print("💬 [VLM 交互控制台已启动] 随时在终端输入任何中文提示词并按回车发送！")
+            print("[CHAT] [VLM 交互控制台已启动] 随时在终端输入任何中文提示词并按回车发送！")
             print("   示例: '帮我把百叶窗拉下来' / '检测学生眯眼' / '提高洗墙灯'")
             print("="*72 + "\n")
             while self.running:
@@ -433,7 +441,7 @@ class VLMClassroomControlSystemV2:
                     self.vlm_hud_lines = res["hud_lines"]
 
                 print("\n" + "="*72)
-                print(f"🧠 【{res['model']} 多模态因果推理响应 (成功执行)】:")
+                print(f"[VLM] 【{res['model']} 多模态因果推理响应 (成功执行)】:")
                 print(f"用户指令: \"{res['prompt']}\"")
                 print(res["thought"])
                 print(f"下发动作: {', '.join(res['actions'])}")
@@ -701,13 +709,13 @@ class VLMClassroomControlSystemV2:
 
     def run(self, max_frames=None, headless_save=None):
         print(f"\n=======================================================")
-        print(f"🚀 GH-VI-2026 VLM 光环境数字孪生主控系统 (v2.0 终极实战版) 启动！")
-        print(f"• 硬件摄像头: {self.cam_mgr.get_current_label()}")
-        print(f"• 核心 VLM: {self.vlm_selector.get_current()[0]}")
-        print(f"• 初始视口模式: {self.view_mode} (按 'V' 或 Tab 随时切换全景数字孪生与学生面部实况)")
-        print(f"• 快捷打字输入: 按 [Enter] 或 [Space] 唤出中文输入法弹窗！")
-        print(f"• 控制台同步: 也可直接在终端敲中文提示词按回车发送！")
-        print(f"• 退出方式: 按 'Q' 键或 'ESC' 退出交互窗口")
+        print(f"[*] GH-VI-2026 VLM 光环境数字孪生主控系统 (v2.0 终极实战版) 启动！")
+        print(f" -  硬件摄像头: {self.cam_mgr.get_current_label()}")
+        print(f" -  核心 VLM: {self.vlm_selector.get_current()[0]}")
+        print(f" -  初始视口模式: {self.view_mode} (按 'V' 或 Tab 随时切换全景数字孪生与学生面部实况)")
+        print(f" -  快捷打字输入: 按 [Enter] 或 [Space] 唤出中文输入法弹窗！")
+        print(f" -  控制台同步: 也可直接在终端敲中文提示词按回车发送！")
+        print(f" -  退出方式: 按 'Q' 键或 'ESC' 退出交互窗口")
         print(f"=======================================================\n")
 
         # 非离线模式启动后台终端输入线程
