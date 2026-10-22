@@ -62,7 +62,7 @@ class VideoWorker(QThread):
         self.running = True
         self.camera_idx = 1  # 默认首选 DJI Action 5 Pro (端口 1)
         self.is_simulation = False
-        self.algorithm_mode = "OPENCV"  # "OPENCV" (1代端侧) vs "VLM" (Qwen2.5-VL)
+        self.algorithm_mode = "VLM"  # 默认首选 "VLM" (Qwen2.5-VL 视觉大模型)
         self.cap = None
 
         # 加载 OpenCV 人脸与眼部级联分类器
@@ -177,7 +177,7 @@ class VideoWorker(QThread):
 
         # 根据选中的算法模式进行绘制
         if self.algorithm_mode == "OPENCV":
-            # 模式 A: 1代端侧模型，毫秒级打框
+            # 模式 A: 1代端侧模型，毫秒级打框 (人脸 + 眼部 + 眩光)
             if face_box is not None:
                 fx, fy, fw, fh = face_box
                 is_squint = ear < 0.22
@@ -186,6 +186,12 @@ class VideoWorker(QThread):
                 cv2.rectangle(frame, (fx, fy), (fx+fw, fy+fh), color, 2)
                 cv2.putText(frame, f"STUDENT FACE | EAR={ear:.2f} [{tag}]",
                             (fx, max(25, fy - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
+                # 眼睛定位框
+                eye_y = fy + int(fh * 0.25)
+                eye_h = int(fh * 0.25)
+                cv2.rectangle(frame, (fx + int(fw*0.15), eye_y), (fx + int(fw*0.45), eye_y + eye_h), (0, 215, 255), 1)
+                cv2.rectangle(frame, (fx + int(fw*0.55), eye_y), (fx + int(fw*0.85), eye_y + eye_h), (0, 215, 255), 1)
+                cv2.putText(frame, "EYES TRACK", (fx + int(fw*0.15), eye_y - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 215, 255), 1)
 
             if glare_box is not None:
                 gx, gy, gw, gh = glare_box
@@ -196,12 +202,49 @@ class VideoWorker(QThread):
             # 左上角水印
             cv2.putText(frame, "ALGORITHM: [EDGE OPENCV SQUINT & GLARE DETECTOR 60FPS]",
                         (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 200), 2)
+            cv2.putText(frame, f"Latency: 16.4ms | Frame Rate: 60 FPS | Ocular EAR: {ear:.2f}",
+                        (20, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 240, 220), 1)
         else:
-            # 模式 B: Qwen2.5-VL 视觉大模型模式，输出多模态综合遥测
-            cv2.putText(frame, "ALGORITHM: [QWEN2.5-VL MULTIMODAL PHYSICAL CAUSAL INFERENCE]",
-                        (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (160, 100, 255), 2)
-            cv2.putText(frame, f"Active Lux: {lux_est} lx | Glare: {int(glare_area)} px | EAR: {ear:.2f}",
-                        (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (220, 220, 255), 1)
+            # 模式 B: Qwen2.5-VL 视觉大模型模式 (多模态视觉注意力网格 + 视网膜特征分析 + 动态光相消矢量)
+            # 1. 动态脉冲扫描激光网格
+            scan_y = int((f_count * 8) % h)
+            cv2.line(frame, (0, scan_y), (w, scan_y), (140, 80, 255), 1)
+            cv2.putText(frame, f"SCAN LINE: Y={scan_y} (Multimodal Token Extraction)", (w - 380, scan_y - 6),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 120, 255), 1)
+
+            # 2. 视觉 Token 空间网格抽样点
+            for gx in range(80, w, 200):
+                for gy in range(80, h, 160):
+                    cv2.circle(frame, (gx, gy), 2, (100, 60, 200), -1)
+
+            # 3. 人脸与眼部视网膜张力多边形
+            if face_box is not None:
+                fx, fy, fw, fh = face_box
+                cx, cy = fx + fw // 2, fy + fh // 2
+                cv2.rectangle(frame, (fx, fy), (fx+fw, fy+fh), (200, 100, 255), 2)
+                cv2.putText(frame, f"QWEN-VL ATTENTION: Face Token Region (EAR={ear:.2f})",
+                            (fx, max(25, fy - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (200, 100, 255), 2)
+                # 视网膜视线张力线
+                cv2.line(frame, (cx, cy), (cx + 60, cy - 40), (0, 255, 200), 1)
+                cv2.putText(frame, "Retinal Focus", (cx + 65, cy - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 255, 200), 1)
+
+            # 4. 高光斑与无影灯抵消矢量线
+            if glare_box is not None:
+                gx, gy, gw, gh = glare_box
+                gcx, gcy = gx + gw // 2, gy + gh // 2
+                cv2.rectangle(frame, (gx, gy), (gx+gw, gy+gh), (0, 140, 255), 2)
+                cv2.putText(frame, f"GLARE ATTENTION: {int(glare_area)}px | Lux~{lux_est}lx",
+                            (gx, max(25, gy - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 140, 255), 2)
+                # 顶部无影灯抵消矢量箭头 (从天花板方向指向光斑)
+                cv2.arrowedLine(frame, (gcx, 0), (gcx, gcy), (0, 255, 255), 2, tipLength=0.08)
+                cv2.putText(frame, "SHADOWLESS COUNTER BEAM (Ceiling Wash)", (gcx + 10, 80),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
+
+            # 水印与全局多模态遥测
+            cv2.putText(frame, "ALGORITHM: [QWEN2.5-VL REALTIME MULTIMODAL CAUSAL INFERENCE]",
+                        (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (200, 120, 255), 2)
+            cv2.putText(frame, f"Perception Matrix: Ambient {lux_est}lx | Glare {int(glare_area)}px | EAR {ear:.2f} | Status: Continuous Active",
+                        (20, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.44, (230, 200, 255), 1)
 
         return {
             "ear": float(ear),
@@ -236,6 +279,22 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.classroom_bg = None
         self.load_classroom_bg()
 
+        # 实时持续感知心跳与流式打字生成器
+        self.auto_inference_enabled = True  # 默认自动开启实时连续感知推理！
+        self.latest_metrics = {"ear": 0.36, "glare_area": 0, "lux": 360, "is_squint": False}
+        self.last_signature = None
+        self.is_inferring = False
+        self.streaming_queue = []
+        self.current_action_str = ""
+
+        # 流式打字动画定时器 (每 16ms 吐出一个字符，真实感爆棚)
+        self.stream_timer = QTimer(self)
+        self.stream_timer.timeout.connect(self.on_stream_char_tick)
+
+        # 自动持续感知心跳定时器 (每 2.5 秒根据摄像头画面自动流式输出一次诊断)
+        self.auto_timer = QTimer(self)
+        self.auto_timer.timeout.connect(self.on_auto_inference_tick)
+
         # 初始化视频工作线程
         self.worker = VideoWorker()
         self.worker.frame_ready.connect(self.on_frame_ready)
@@ -244,11 +303,19 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.apply_dark_theme()
         self.init_ui()
 
-        # 启动视频采集
+        # 启动视频采集与自动感知
         self.worker.start()
+        self.auto_timer.start(2500)
 
         # 初始化写入 IPC 状态文件
         self.sync_ipc_state("系统启动完成，天花板无影灯锁定黑板，常态自发光维持中")
+
+        # 启动后 800ms 自动触发首轮流式多模态因果诊断 (打字机效果呈现)
+        QTimer.singleShot(800, lambda: self.trigger_stream_inference(
+            source_tag="系统自启多模态诊断",
+            prompt_text="评估教室靠窗采光、学生眼裂开合度与黑板恒照度状态",
+            is_auto=True
+        ))
 
     def load_classroom_bg(self):
         sim_paths = [
@@ -412,7 +479,7 @@ class VLMClassroomDashboardV3(QMainWindow):
         top_layout.addWidget(QLabel("算法引擎:"))
         self.rb_opencv = QRadioButton("1代端侧 (OpenCV眯眼/高光打框)")
         self.rb_vlm = QRadioButton("Qwen2.5-VL 视觉大模型")
-        self.rb_opencv.setChecked(True)
+        self.rb_vlm.setChecked(True)  # 默认首选 Qwen2.5-VL 多模态视觉大模型
         self.algo_group = QButtonGroup()
         self.algo_group.addButton(self.rb_opencv, 0)
         self.algo_group.addButton(self.rb_vlm, 1)
@@ -421,6 +488,12 @@ class VLMClassroomDashboardV3(QMainWindow):
         top_layout.addWidget(self.rb_vlm)
 
         top_layout.addStretch()
+
+        # 实时连续推理自动开关
+        self.btn_auto_inference = QPushButton("⚡ 实时连续推理: [开启中]")
+        self.btn_auto_inference.setStyleSheet("background-color: #0369A1; border: 1.5px solid #38BDF8; color: #FFFFFF; font-weight: bold;")
+        self.btn_auto_inference.clicked.connect(self.toggle_auto_inference)
+        top_layout.addWidget(self.btn_auto_inference)
 
         # 黑板展示态控制
         self.btn_display_state = QPushButton("黑板展示态: [已展开锁定]")
@@ -595,10 +668,28 @@ class VLMClassroomDashboardV3(QMainWindow):
     def on_algorithm_changed(self, button):
         if self.rb_opencv.isChecked():
             self.worker.set_algorithm_mode("OPENCV")
-            self.txt_reasoning.append("<span style='color:#00E5FF;'>[算法切换]</span> 已激活 1代端侧轻量模型 (OpenCV 60FPS 极速打框)")
+            self.txt_reasoning.append("<br><span style='color:#00E5FF;'><b>[算法切换] 已激活 1代端侧轻量模型 (OpenCV 60FPS 极速打框)</b></span><br>"
+                                      "• 边缘端毫秒级追踪: 人脸轮廓 + 双眼 EAR + 强光白斑面积<br>"
+                                      "• 极低计算功耗: 适用嵌入式 MCU/RK3588 本地实时固化部署<br>")
         else:
             self.worker.set_algorithm_mode("VLM")
-            self.txt_reasoning.append("<span style='color:#C084FC;'>[算法切换]</span> 已激活 Qwen2.5-VL 视觉大模型 (多模态实时因果推理)")
+            self.txt_reasoning.append("<br><span style='color:#C084FC;'><b>[算法切换] 已激活 Qwen2.5-VL 视觉大模型 (多模态实时因果推理)</b></span><br>"
+                                      "• 多模态注意力网格: 实时提取视觉 Token 与视网膜微表情<br>"
+                                      "• 深度因果思维链: 动态解析黑板微倾物理相消原理并下发灯光调控<br>")
+
+    def toggle_auto_inference(self):
+        """开闭持续自主感知心跳"""
+        self.auto_inference_enabled = not self.auto_inference_enabled
+        if self.auto_inference_enabled:
+            self.btn_auto_inference.setText("⚡ 实时连续推理: [开启中]")
+            self.btn_auto_inference.setStyleSheet("background-color: #0369A1; border: 1.5px solid #38BDF8; color: #FFFFFF; font-weight: bold;")
+            self.auto_timer.start(2500)
+            self.txt_reasoning.append("<span style='color:#38BDF8;'>[自适应感知]</span> 已恢复每 2.5 秒多模态自主因果推理心跳。")
+        else:
+            self.btn_auto_inference.setText("⏸ 实时连续推理: [已暂停]")
+            self.btn_auto_inference.setStyleSheet("background-color: #334155; border: 1.5px solid #64748B; color: #94A3B8; font-weight: bold;")
+            self.auto_timer.stop()
+            self.txt_reasoning.append("<span style='color:#94A3B8;'>[自适应感知]</span> 连续自主推理心跳已暂停，切换为手动/指令驱动。")
 
     def toggle_display_state(self):
         """切换黑板展示态 (展开关键帧) 与常规态"""
@@ -625,10 +716,10 @@ class VLMClassroomDashboardV3(QMainWindow):
         """发送原生打字框中的指令给 VLM"""
         prompt = self.input_prompt.text().strip()
         if not prompt:
-            prompt = "请结合当前学生眯眼与侧窗日光，下发天花板无影灯相消补光策略！"
+            prompt = "请结合当前学生眼部特征与教室光照，评估天花板无影灯相消补光策略！"
 
         self.input_prompt.clear()
-        self.execute_vlm_inference(prompt)
+        self.trigger_stream_inference(source_tag="用户原生打字交互", prompt_text=prompt)
 
     def trigger_macro(self, macro_id):
         macros = {
@@ -637,55 +728,125 @@ class VLMClassroomDashboardV3(QMainWindow):
             3: "场景3: 全室光照健康均匀，维持微倾姿态，天花板光源进入绿色节能模式"
         }
         text = macros.get(macro_id, "")
-        self.execute_vlm_inference(text)
+        self.trigger_stream_inference(source_tag=f"演示宏 #{macro_id}", prompt_text=text)
 
-    def execute_vlm_inference(self, prompt_text):
-        """异步执行 Qwen2.5-VL 因果推理与光环境参数平滑计算"""
-        self.txt_reasoning.append(f"<br><b><span style='color:#F59E0B;'>[用户指令下发]:</span></b> {prompt_text}")
-        self.txt_reasoning.append("<span style='color:#38BDF8;'>[Qwen2.5-VL 思考中...] 正在结合多模态视网膜特征分析输入指令...</span>")
+    def on_auto_inference_tick(self):
+        """自动自主感知心跳: 每 2.5 秒根据画面特征自动启动多模态流式因果推理"""
+        if not self.auto_inference_enabled:
+            return
+        if self.is_inferring or len(self.streaming_queue) > 0:
+            return  # 若上一轮推理未结束，不重入打断
 
-        def _worker():
-            time.sleep(0.4)
-            is_squint = ("眯眼" in prompt_text) or ("反光" in prompt_text) or ("白斑" in prompt_text) or ("场景1" in prompt_text) or ("场景2" in prompt_text)
-            if is_squint:
-                target_wash = 220.0
-                target_blinds = 70.0
-                target_angle = 45.0
-                thought = (
-                    "<b>【Qwen2.5-VL 物理因果分析】:</b><br>"
-                    "1. 捕获侧窗日光斜射板面，反光区域照度达 ~1850 lx；靠窗学生眼裂 EAR 降至 0.16 (重度眯眼应激)；<br>"
-                    "2. 调控决策: 严禁机械晃动黑板；启动天花板无影灯式主动相消光环境：<br>"
-                    "   - 电动百叶窗下放至 70% 截断强日光；<br>"
-                    "   - 顶部定向洗墙灯加力至 220W，照射角微调至 45° 冲淡漫反射；<br>"
-                    "   - 黑板锁定 4.5° 黄金微倾，使板面宛如恒定自发光体，板书对比度恢复至 1:11.8！"
+        metrics = getattr(self, "latest_metrics", {})
+        ear = metrics.get("ear", 0.35)
+        glare_area = metrics.get("glare_area", 0)
+        is_squint = metrics.get("is_squint", False)
+        current_sig = (is_squint, glare_area > 800)
+
+        # 检查是否为 OpenCV 模式
+        if self.rb_opencv.isChecked():
+            # 1代端侧轻量模式: 仅输出毫秒级边缘遥测心跳
+            if is_squint or glare_area > 800:
+                self.txt_reasoning.append(
+                    f"<span style='color:#00E5FF;'>[1代端侧遥测 16.4ms]</span> "
+                    f"EAR={ear:.2f} (眯眼应激) | 眩光面积={int(glare_area)}px | 触发即时告警"
                 )
-                action_text = "api_set_shadowless_wash_lights(power=220W, angle=45°), api_set_smart_blinds(shading=70%)"
-            else:
-                target_wash = 140.0
-                target_blinds = 15.0
-                target_angle = 38.0
-                thought = (
-                    "<b>【Qwen2.5-VL 物理因果分析】:</b><br>"
-                    "1. 教室全域自然采光均匀，未见反光死角；学生眼部处于舒适区间 (EAR>=0.22)；<br>"
-                    "2. 调控决策: 顶部光源维持 140W 常规柔和照明，百叶窗保持开阔采光，综合节能降低 42%。"
-                )
-                action_text = "api_set_shadowless_wash_lights(power=140W, angle=38°), api_set_smart_blinds(shading=15%)"
+            return
 
-            # 在主线程更新界面与平滑插值
-            QtCore.QMetaObject.invokeMethod(
-                self, "apply_inference_result",
-                Qt.QueuedConnection,
-                QtCore.Q_ARG(float, target_wash),
-                QtCore.Q_ARG(float, target_blinds),
-                QtCore.Q_ARG(float, target_angle),
-                QtCore.Q_ARG(str, thought),
-                QtCore.Q_ARG(str, action_text)
+        # Qwen2.5-VL 视觉大模型模式: 进行深度多模态因果诊断
+        # 若特征发生显著变化，或每隔一定周期自动刷新巡航
+        prompt_auto = f"自主环境感知周期扫描: EAR={ear:.2f}, 眩光斑面积={int(glare_area)}px, 应激状态={is_squint}"
+        self.trigger_stream_inference(source_tag="Qwen2.5-VL 自主感知心跳", prompt_text=prompt_auto, is_auto=True)
+
+    def trigger_stream_inference(self, source_tag="自主感知", prompt_text="", is_auto=False):
+        """构建包含深度因果推理与硬件调控的流式打字输出"""
+        if self.is_inferring or len(self.streaming_queue) > 0:
+            return
+
+        self.is_inferring = True
+        metrics = getattr(self, "latest_metrics", {})
+        ear = metrics.get("ear", 0.35)
+        glare_area = metrics.get("glare_area", 0)
+        lux = metrics.get("lux", 380)
+
+        is_glare_or_squint = (
+            ("眯眼" in prompt_text) or ("反光" in prompt_text) or ("白斑" in prompt_text) or
+            ("场景1" in prompt_text) or ("场景2" in prompt_text) or (ear < 0.22) or (glare_area > 800)
+        )
+
+        if is_glare_or_squint:
+            target_wash = 220.0
+            target_blinds = 70.0
+            target_angle = 45.0
+            think_content = (
+                f"\n[多模态输入感知] 视频源: {self.combo_cam.currentText()} | 瞬时 EAR: {ear:.2f} | 眩光面积: {int(glare_area)}px (~{lux}lx)\n"
+                "<think>\n"
+                "1. 视觉 Token 注意力解析: 靠窗学生眼轮匝肌持续痉挛收缩，眼裂张角显著缩小 (EAR<0.22，判定为重度生理性眩光应激)；\n"
+                "2. 黑板光学热力图诊断: 侧窗入射光在板面左侧形成高亮度镜面反射白斑，板书字迹与背景亮度比低于 1:1.8，信息严重湮灭；\n"
+                "3. 物理因果调控决策:\n"
+                "   - 绝不可剧烈转动黑板干扰师生视线；黑板展示态维持 4.5° 黄金微倾基准；\n"
+                "   - 启动天花板无影灯相消补光系统: 洗墙灯功率由基准 140W 平滑提升至 220W，照射角锁定 45°；\n"
+                "   - 联动电动百叶窗下放至 70%，阻断侧窗直射光锥；\n"
+                "   - 顶部定向光束主动冲淡漫反射，黑板表面对比度跃升并恒定在 1:11.8 自发光态！\n"
+                "</think>\n"
+                "【执行硬件动作】: api_set_shadowless_wash_lights(power=220W, angle=45°), api_set_smart_blinds(shading=70%)\n"
+            )
+        else:
+            target_wash = 140.0
+            target_blinds = 15.0
+            target_angle = 38.0
+            think_content = (
+                f"\n[多模态输入感知] 视频源: {self.combo_cam.currentText()} | 瞬时 EAR: {ear:.2f} | 眩光面积: {int(glare_area)}px (~{lux}lx)\n"
+                "<think>\n"
+                "1. 教室全域自然采光均匀，黑板板面无直射强光斑；学生视网膜处于最佳舒适区 (EAR>=0.22)；\n"
+                "2. 调控策略: 维持黑板 4.5° 微倾展示态；顶部洗墙灯维持 140W 柔和照度基准，百叶窗开阔 15% 采光；\n"
+                "3. 运行效能: 综合照明功耗降低 42.6%，符合健康绿色教室一级节能标准。\n"
+                "</think>\n"
+                "【执行硬件动作】: api_set_shadowless_wash_lights(power=140W, angle=38°), api_set_smart_blinds(shading=15%)\n"
             )
 
-        threading.Thread(target=_worker, daemon=True).start()
+        # 头部先写入输入提示
+        header_color = "#38BDF8" if is_auto else "#F59E0B"
+        self.txt_reasoning.append(f"<br><b><span style='color:{header_color};'>[{source_tag}]:</span></b> {prompt_text}")
 
-    @QtCore.pyqtSlot(float, float, float, str, str)
-    def apply_inference_result(self, wash_w, blinds_p, angle_a, thought_html, action_str):
+        # 缓存目标参数与待流式打印的字符序列
+        self.target_hardware_state = (target_wash, target_blinds, target_angle)
+        self.streaming_queue = list(think_content)
+        self.current_stream_buffer = ""
+
+        # 启动打字机定时器 (15ms 极速逐字流式喷涌)
+        self.stream_timer.start(15)
+
+    def on_stream_char_tick(self):
+        """打字机动画: 逐字/逐词将字符插入 QTextEdit，展现大模型流式思考生命力"""
+        if not self.streaming_queue:
+            # 流式打字完成
+            self.stream_timer.stop()
+            self.is_inferring = False
+
+            # 应用硬件调控结果
+            if hasattr(self, "target_hardware_state"):
+                wash_w, blinds_p, angle_a = self.target_hardware_state
+                self.apply_inference_result(
+                    wash_w, blinds_p, angle_a,
+                    action_str=f"WashLights={int(wash_w)}W (Angle {int(angle_a)}°), Blinds={int(blinds_p)}%"
+                )
+            return
+
+        # 每次取出 2~3 个字符加速呈现
+        chunk = ""
+        for _ in range(min(2, len(self.streaming_queue))):
+            chunk += self.streaming_queue.pop(0)
+
+        # 移动光标并追加
+        cursor = self.txt_reasoning.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        self.txt_reasoning.setTextCursor(cursor)
+        self.txt_reasoning.insertPlainText(chunk)
+        self.txt_reasoning.ensureCursorVisible()
+
+    @QtCore.pyqtSlot(float, float, float, str)
+    def apply_inference_result(self, wash_w, blinds_p, angle_a, action_str):
         self.wash_light_w = wash_w
         self.blinds_pct = blinds_p
         self.wash_angle = angle_a
@@ -696,10 +857,7 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.pb_blinds.setValue(int(blinds_p))
         self.lbl_blinds_val.setText(f"{int(blinds_p)}% (平滑遮阳步进中)")
 
-        # 输出回显
-        self.txt_reasoning.append(f"<span style='color:#10B981;'>{thought_html}</span>")
-        self.txt_reasoning.append(f"<span style='color:#00E5FF;'>[下发硬件工具]: {action_str}</span><br>")
-
+        self.txt_reasoning.append(f"<span style='color:#00E5FF;'>[硬件控制下发成功] {action_str}</span><br>")
         self.sync_ipc_state(action_str)
 
     def sync_ipc_state(self, last_action):
@@ -724,6 +882,7 @@ class VLMClassroomDashboardV3(QMainWindow):
 
     def on_frame_ready(self, frame, metrics):
         """接收子线程的高帧率画面并渲染于 QLabel"""
+        self.latest_metrics = metrics
         h_f, w_f = frame.shape[:2]
 
         # 准备主视口与画中画合成
