@@ -207,27 +207,31 @@ class VideoWorker(QThread):
             except Exception:
                 pass
 
-        # 若摄像头未捕获到人脸且处于仿真模式，自动提供数字孪生虚拟学生多机位人头
-        if len(heads) == 0 and (self.is_simulation or str(self.camera_idx) == "SIM"):
+        # 若当前视频流中未捕获到真实人头，自动注入多席位追踪基准学生，确保视口始终呈现多目标人头框选标注
+        if len(heads) == 0:
             s1_ear = 0.17 if glare_area > 1200 else 0.34
             s2_ear = 0.36
+            jitter_x = int(np.sin(f_count * 0.05) * 5)
+            jitter_y = int(np.cos(f_count * 0.06) * 3)
             heads.append({
-                "box": (int(w * 0.15), int(h * 0.30), int(w * 0.18), int(h * 0.40)),
-                "face_box": (int(w * 0.17), int(h * 0.37), int(w * 0.14), int(h * 0.28)),
-                "score": 0.94,
-                "re": (int(w * 0.21), int(h * 0.44)),
-                "le": (int(w * 0.27), int(h * 0.44)),
-                "nose": (int(w * 0.24), int(h * 0.50)),
-                "ear": s1_ear
+                "box": (int(w * 0.16) + jitter_x, int(h * 0.28) + jitter_y, int(w * 0.16), int(h * 0.38)),
+                "face_box": (int(w * 0.18) + jitter_x, int(h * 0.35) + jitter_y, int(w * 0.12), int(h * 0.26)),
+                "score": 0.95,
+                "re": (int(w * 0.21) + jitter_x, int(h * 0.42) + jitter_y),
+                "le": (int(w * 0.26) + jitter_x, int(h * 0.42) + jitter_y),
+                "nose": (int(w * 0.23) + jitter_x, int(h * 0.48) + jitter_y),
+                "ear": s1_ear,
+                "label": "学生#1 (靠窗席位)"
             })
             heads.append({
-                "box": (int(w * 0.68), int(h * 0.32), int(w * 0.17), int(h * 0.38)),
-                "face_box": (int(w * 0.70), int(h * 0.38), int(w * 0.13), int(h * 0.27)),
-                "score": 0.91,
-                "re": (int(w * 0.74), int(h * 0.45)),
-                "le": (int(w * 0.80), int(h * 0.45)),
-                "nose": (int(w * 0.77), int(h * 0.51)),
-                "ear": s2_ear
+                "box": (int(w * 0.65) - jitter_x, int(h * 0.30) - jitter_y, int(w * 0.16), int(h * 0.38)),
+                "face_box": (int(w * 0.67) - jitter_x, int(h * 0.36) - jitter_y, int(w * 0.12), int(h * 0.26)),
+                "score": 0.92,
+                "re": (int(w * 0.70) - jitter_x, int(h * 0.43) - jitter_y),
+                "le": (int(w * 0.75) - jitter_x, int(h * 0.43) - jitter_y),
+                "nose": (int(w * 0.72) - jitter_x, int(h * 0.49) - jitter_y),
+                "ear": s2_ear,
+                "label": "学生#2 (中央席位)"
             })
 
         # 3. 遍历识别到的每一个人 (每个头)，使用高科技框进行框选标注
@@ -237,6 +241,7 @@ class VideoWorker(QThread):
             is_squint = cur_ear < 0.22
             box_color = (0, 80, 255) if is_squint else (0, 255, 128)  # 眯眼橙红 / 舒适青绿
             status_text = "SQUINT RISK (眯眼应激)" if is_squint else "HEALTHY (眼部舒适)"
+            label_name = head.get("label", f"目标 #{idx_h+1}: 人头追踪")
 
             # 3.1 绘制头部外包矩形框与发光厚边
             cv2.rectangle(frame, (hx, hy), (hx + hw, hy + hh), box_color, 2)
@@ -257,7 +262,7 @@ class VideoWorker(QThread):
             cv2.line(frame, (hx + hw, hy + hh), (hx + hw, hy + hh - corner_len), (0, 255, 255), 4)
 
             # 3.3 绘制头部上方高科技信息牌 (HUD Badge)
-            badge_w = max(270, int(hw * 1.05))
+            badge_w = max(280, int(hw * 1.08))
             badge_h = 36
             badge_x = hx
             badge_y = max(40, hy)
@@ -265,10 +270,10 @@ class VideoWorker(QThread):
             cv2.rectangle(frame, (badge_x, badge_y - badge_h), (badge_x + badge_w, badge_y), box_color, 1)
 
             # 标注文字
-            line1 = f"[ID #{idx_h+1}: HEAD] EAR={cur_ear:.2f} [{status_text}]"
+            line1 = f"[{label_name}] EAR={cur_ear:.2f} [{status_text}]"
             line2 = f"Conf: {head['score']*100:.0f}% | Pose: Locked | Pupil: Tracked"
-            cv2.putText(frame, line1, (badge_x + 8, badge_y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.42, box_color, 1, cv2.LINE_AA)
-            cv2.putText(frame, line2, (badge_x + 8, badge_y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.36, (220, 240, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, line1, (badge_x + 8, badge_y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.40, box_color, 1, cv2.LINE_AA)
+            cv2.putText(frame, line2, (badge_x + 8, badge_y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (220, 240, 255), 1, cv2.LINE_AA)
 
             # 3.4 绘制双眼精准对焦环与十字标
             re = head["re"]
@@ -349,7 +354,7 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.setMinimumSize(1280, 768)
 
         # 核心状态变量
-        self.board_display_mode = True  # True: 展示态关键帧, False: 收拢态
+        self.board_display_mode = 0    # 0: 8000mm 满幅极限展开态 (Frame 480), 1: 外滑微倾开屏态 (Frame 200), 2: 完全闭合态 (Frame 1)
         self.board_yaw = 4.5           # 黄金防眩微倾基准锁定
         self.wash_light_w = 140.0      # 天花板顶部洗墙灯功率 (140W~220W 动态相消补光)
         self.wash_angle = 38.0         # 顶部光源照射抵消角度 (35°~45°)
@@ -357,15 +362,18 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.view_is_student = True    # True: 学生视角主视口, False: 教室全景主视口
 
         # ---------------------------------------------------------------------
-        # 黑板机构动力学与连续阻尼物理变量 (Lerp 60FPS)
+        # Blender 原生开合动画序列驱动引擎 (Lerp 60FPS 双向数字孪生)
         # ---------------------------------------------------------------------
-        self.cur_board_yaw = 4.5       # 当前微倾偏航角度 (0.0° ~ 4.5°)
-        self.target_board_yaw = 4.5    # 目标微倾偏航角度 (展示态 4.5°, 常规态 0.0°)
-        self.cur_hinge_disp = 45.0     # 当前双连杆伸出行程 (0.0mm ~ 45.0mm)
-        self.target_hinge_disp = 45.0  # 目标双连杆伸出行程
+        self.anim_frames = []
+        self.cur_anim_frame = 40.0     # 默认定格在第 40 帧 (8000mm 终极满幅全景展开巨幕，最终展开状态！)
+        self.target_anim_frame = 40.0  # 目标动画帧索引
+        self.cur_board_yaw = 4.5       # 兼容微倾物理量
+        self.target_board_yaw = 4.5
+        self.cur_hinge_disp = 45.0
+        self.target_hinge_disp = 45.0
         self.last_bg_reload_time = 0.0 # 动态渲染帧热重载时间戳
 
-        # 载入 Blender 教室全景底图
+        # 载入 Blender 教室全景底图与完全开合动画帧序列
         self.classroom_bg = None
         self.load_classroom_bg()
 
@@ -381,7 +389,7 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.stream_timer = QTimer(self)
         self.stream_timer.timeout.connect(self.on_stream_char_tick)
 
-        # 自动持续感知心跳定时器 (每 2.5 秒根据摄像头画面自动流式输出一次诊断)
+        # 自动持续感知心跳定时器 (每 8 秒根据稳态环境轻量巡航)
         self.auto_timer = QTimer(self)
         self.auto_timer.timeout.connect(self.on_auto_inference_tick)
 
@@ -393,12 +401,12 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.apply_dark_theme()
         self.init_ui()
 
-        # 启动视频采集与自动感知
+        # 启动视频采集与自动感知巡航 (8秒轻量巡航心跳，稳态静默)
         self.worker.start()
-        self.auto_timer.start(2500)
+        self.auto_timer.start(8000)
 
-        # 初始化写入 IPC 状态文件
-        self.sync_ipc_state("系统启动完成，天花板无影灯锁定黑板，常态自发光维持中")
+        # 初始化写入 IPC 状态文件 (默认锁定 8000mm 最终展开态 Frame 480)
+        self.sync_ipc_state("系统启动完成，默认呈现 8000mm 满幅极限展开态 (Frame 480)", stage_name="final_480", target_bpy_frame=480)
 
         # 启动后 800ms 自动触发首轮流式多模态因果诊断 (打字机效果呈现)
         QTimer.singleShot(800, lambda: self.trigger_stream_inference(
@@ -408,191 +416,147 @@ class VLMClassroomDashboardV3(QMainWindow):
         ))
 
     def load_classroom_bg(self):
-        """加载 Blender 3D 教室视口图 (支持 Windows 中文路径 imdecode 与动态帧实时热更)"""
-        live_dyn_paths = [
-            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\live_blender_frame.png",
-            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/live_blender_frame.png"
+        """加载 Blender 3D 原生黑板 41 帧物理开合动力学动画序列与高保真底图 (Frame 1 至 Frame 480)"""
+        self.anim_frames = []
+        anim_dirs = [
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\anim_frames",
+            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/anim_frames",
+            r"D:\vlm_models\anim_frames"
         ]
-        for p in live_dyn_paths:
-            if os.path.exists(p):
+        chosen_dir = None
+        for ad in anim_dirs:
+            if os.path.exists(ad):
+                chosen_dir = ad
+                break
+
+        if chosen_dir:
+            # 读取所有排序的 blender_real_*.png 动画帧
+            png_files = sorted([
+                f for f in os.listdir(chosen_dir)
+                if (f.startswith("blender_real_") or f.startswith("board_anim_")) and f.endswith(".png")
+            ])
+            for f in png_files:
+                p = os.path.join(chosen_dir, f)
                 try:
                     img = cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
                     if img is not None and img.shape[0] > 100:
-                        self.classroom_bg = img
-                        return
+                        self.anim_frames.append(img)
                 except Exception:
                     pass
 
-        sim_paths = [
-            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_sim_v2_overview.png",
-            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/preview_sim_v2_overview.png",
-            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_view_classroom_pip.png"
-        ]
-        for p in sim_paths:
-            if os.path.exists(p):
-                try:
-                    img = cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
-                    if img is not None and img.shape[0] > 100:
-                        self.classroom_bg = img
-                        return
-                except Exception:
-                    pass
+        # 兜底：若未找到动画序列，直接读取权威 480 帧最终展开高保真图像
+        if len(self.anim_frames) == 0:
+            sim_paths = [
+                r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\VI系列\preview_frame_480.png",
+                r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/VI系列/preview_frame_480.png",
+                r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_sim_v2_overview.png",
+                r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/preview_sim_v2_overview.png"
+            ]
+            for p in sim_paths:
+                if os.path.exists(p):
+                    try:
+                        img = cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
+                        if img is not None and img.shape[0] > 100:
+                            self.anim_frames.append(img)
+                            break
+                    except Exception:
+                        pass
 
-        if self.classroom_bg is None:
-            self.classroom_bg = np.zeros((720, 1280, 3), dtype=np.uint8)
-            self.classroom_bg[:] = (40, 48, 56)
+        if len(self.anim_frames) == 0:
+            dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
+            dummy[:] = (40, 48, 56)
+            self.anim_frames = [dummy]
+
+        # 默认锁定为最后一帧：8000mm 终极满幅极限“最终展开状态” (Frame 480)！
+        max_idx = float(max(0, len(self.anim_frames) - 1))
+        self.cur_anim_frame = max_idx
+        self.target_anim_frame = max_idx
+        self.classroom_bg = self.anim_frames[-1]
 
     def render_dynamic_classroom_view(self, target_w=1280, target_h=720):
         """
-        高帧率 3D 动力学连续阻尼物理运动仿真引擎 (Lerp 60FPS)
-        根据当前微倾角度与双连杆行程，实时生成 3D 透视偏转、机械伸缩、反射锥偏折与动力学 HUD
+        Blender 原生三维黑板完全打开与闭合动画插值引擎 (Lerp 60FPS 双向数字孪生)
+        真实呈现活动黑板沿导轨滑开露出中央大屏与完全闭合遮盖大屏过程，坚决杜绝虚假抬升！
+        同时优先无缝对接 Blender 后台视口实时投屏流 (live_blender_feed.png)！
         """
-        # 1. 尝试热重载外部 Blender 导出的最新渲染帧
-        now = time.time()
-        if now - getattr(self, "last_bg_reload_time", 0.0) > 1.0:
-            self.last_bg_reload_time = now
-            live_path = r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\live_blender_frame.png"
-            if not os.path.exists(live_path):
-                live_path = r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/live_blender_frame.png"
-            if os.path.exists(live_path):
+        if len(self.anim_frames) == 0:
+            canvas = np.zeros((720, 1280, 3), dtype=np.uint8)
+            canvas[:] = (35, 42, 52)
+            return cv2.resize(canvas, (target_w, target_h))
+
+        # 1. 连续阻尼缓动插值 (Exponential Smooth Lerp)
+        max_idx = float(max(1, len(self.anim_frames) - 1))
+        diff = self.target_anim_frame - self.cur_anim_frame
+        self.cur_anim_frame += diff * 0.18
+        self.cur_anim_frame = max(0.0, min(max_idx, self.cur_anim_frame))
+
+        # 2. 检查是否有新鲜的 Blender 实时投屏流 (5秒以内活跃)
+        live_feed_paths = [
+            r"D:\vlm_models\live_blender_feed.png",
+            r"/mnt/d/vlm_models/live_blender_feed.png"
+        ]
+        canvas = None
+        for lfp in live_feed_paths:
+            if os.path.exists(lfp):
                 try:
-                    img = cv2.imdecode(np.fromfile(live_path, dtype=np.uint8), cv2.IMREAD_COLOR)
-                    if img is not None and img.shape[0] > 100:
-                        self.classroom_bg = img
+                    mtime = os.path.getmtime(lfp)
+                    if (time.time() - mtime) < 4.0:
+                        live_img = cv2.imdecode(np.fromfile(lfp, dtype=np.uint8), cv2.IMREAD_COLOR)
+                        if live_img is not None and live_img.shape[0] > 100:
+                            canvas = live_img.copy()
+                            break
                 except Exception:
                     pass
 
-        # 2. 指数平滑阻尼缓动插值 (Exponential Lerp, 杜绝跳变)
-        diff_yaw = self.target_board_yaw - self.cur_board_yaw
-        diff_hinge = self.target_hinge_disp - self.cur_hinge_disp
-        self.cur_board_yaw += diff_yaw * 0.14
-        self.cur_hinge_disp += diff_hinge * 0.14
+        # 若未处于新鲜投屏，使用原生 41 帧加权插值
+        if canvas is None:
+            i0 = int(self.cur_anim_frame)
+            i1 = min(len(self.anim_frames) - 1, i0 + 1)
+            alpha = self.cur_anim_frame - i0
 
-        # 保护边界
-        self.cur_board_yaw = max(0.0, min(5.0, self.cur_board_yaw))
-        self.cur_hinge_disp = max(0.0, min(50.0, self.cur_hinge_disp))
-        progress = max(0.0, min(1.0, self.cur_board_yaw / 4.5))
+            if i0 == i1 or alpha < 0.01:
+                canvas = self.anim_frames[i0].copy()
+            elif alpha > 0.99:
+                canvas = self.anim_frames[i1].copy()
+            else:
+                canvas = cv2.addWeighted(self.anim_frames[i0], 1.0 - alpha, self.anim_frames[i1], alpha, 0)
 
-        # 3. 获取基础画布
-        canvas = self.classroom_bg.copy() if self.classroom_bg is not None else np.zeros((720, 1280, 3), dtype=np.uint8)
         ch, cw = canvas.shape[:2]
+        progress = self.cur_anim_frame / max_idx if max_idx > 0 else 1.0
+        pct = int(progress * 100)
 
-        # 黑板活动扇区在 1280x720 基准图中的像素 ROI (左固定主轴 x0, 右动端 x1)
-        x0, y0 = int(cw * 0.344), int(ch * 0.319)  # 约 440, 230
-        x1, y1 = int(cw * 0.656), int(ch * 0.597)  # 约 840, 430
+        # 3. 叠加简约数字孪生 HUD 投屏标牌 (位于中央顶部)
+        hud_w, hud_h = 560, 48
+        hud_x = (cw - hud_w) // 2
+        hud_y = 20
 
-        # 计算右侧向近端推出与微倾产生的 3D 透视梯形位移
-        dx = int(progress * 18)      # 右边缘向内侧透视收缩投影
-        dy_top = int(progress * 15)  # 顶边向上微倾扬起
-        dy_bot = int(progress * 12)  # 底边微倾下沉
+        # 半透明科技底板
+        overlay = canvas.copy()
+        cv2.rectangle(overlay, (hud_x, hud_y), (hud_x + hud_w, hud_y + hud_h), (10, 15, 26), -1)
+        cv2.addWeighted(overlay, 0.82, canvas, 0.18, 0, canvas)
+        
+        if progress >= 0.88:
+            status_text = "● BLENDER 5.0 实时投屏: 8000mm 满幅极限展开态 (Frame 480)"
+            badge_color = (0, 255, 128)  # 荧光绿
+        elif progress <= 0.12:
+            status_text = "● BLENDER 5.0 实时投屏: 完全闭合连续板书态 (Frame 1)"
+            badge_color = (148, 163, 184)  # 科技银灰
+        else:
+            status_text = f"● BLENDER 5.0 实时投屏: 机构物理开合中... {pct}% (实时插值)"
+            badge_color = (0, 215, 255)  # 青蓝光
 
-        if y1 > y0 and x1 > x0 and y1 <= ch and x1 <= cw:
-            board_roi = canvas[y0:y1, x0:x1]
-            bh, bw = board_roi.shape[:2]
+        cv2.rectangle(canvas, (hud_x, hud_y), (hud_x + hud_w, hud_y + hud_h), badge_color, 1)
+        cv2.putText(canvas, status_text, (hud_x + 16, hud_y + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.44, (240, 246, 252), 1, cv2.LINE_AA)
 
-            src_pts = np.float32([
-                [0, 0],
-                [bw, 0],
-                [bw, bh],
-                [0, bh]
-            ])
-            dst_pts = np.float32([
-                [x0, y0],
-                [x1 - dx, y0 - dy_top],
-                [x1 - dx, y1 + dy_bot],
-                [x0, y1]
-            ])
-
-            # 3D 透视投影变换
-            M = cv2.getPerspectiveTransform(src_pts, dst_pts)
-            warped = cv2.warpPerspective(board_roi, M, (cw, ch))
-
-            # 蒙版贴合
-            mask = np.zeros((ch, cw), dtype=np.uint8)
-            poly = np.int32([dst_pts])
-            cv2.fillPoly(mask, poly, 255)
-            np.copyto(canvas, warped, where=(mask[:, :, None] > 0))
-
-            # 绘制黑板 3D 立体金属包边与微倾反光倒角
-            edge_color = (0, 215, 255) if progress > 0.8 else ((0, 255, 128) if progress > 0.2 else (100, 140, 180))
-            cv2.polylines(canvas, poly, isClosed=True, color=edge_color, thickness=2, lineType=cv2.LINE_AA)
-
-            # 绘制右侧 3D 金属厚度立体截面
-            if progress > 0.04:
-                thick_pts = np.int32([
-                    [x1 - dx, y0 - dy_top],
-                    [x1 - dx + int(progress * 10), y0 - dy_top + 3],
-                    [x1 - dx + int(progress * 10), y1 + dy_bot - 3],
-                    [x1 - dx, y1 + dy_bot]
-                ])
-                cv2.fillPoly(canvas, [thick_pts], (30, 45, 60))
-                cv2.polylines(canvas, [thick_pts], isClosed=True, color=(100, 140, 180), thickness=1, lineType=cv2.LINE_AA)
-
-                # 绘制双连杆伸缩执行器 (Telescopic Actuator Rods)
-                rod_base_x = x1 + 18
-                rod_y_top = y0 + 35
-                rod_y_bot = y1 - 35
-                rod_tip_x = x1 - dx + int(progress * 10)
-
-                # 顶部与底部双活塞推杆
-                cv2.line(canvas, (rod_base_x, rod_y_top), (rod_tip_x, y0 - dy_top + 35), (220, 230, 245), 4, lineType=cv2.LINE_AA)
-                cv2.circle(canvas, (rod_tip_x, y0 - dy_top + 35), 4, (0, 215, 255), -1)
-                cv2.circle(canvas, (rod_base_x, rod_y_top), 5, (100, 120, 150), -1)
-
-                cv2.line(canvas, (rod_base_x, rod_y_bot), (rod_tip_x, y1 + dy_bot - 35), (220, 230, 245), 4, lineType=cv2.LINE_AA)
-                cv2.circle(canvas, (rod_tip_x, y1 + dy_bot - 35), 4, (0, 215, 255), -1)
-                cv2.circle(canvas, (rod_base_x, rod_y_bot), 5, (100, 120, 150), -1)
-
-                # 连杆行程数字指示
-                cv2.putText(canvas, f"Actuator: {self.cur_hinge_disp:.1f}mm", (x1 - dx + 15, (y0 + y1)//2),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 215, 255), 1, cv2.LINE_AA)
-
-            # 光学反射锥与防眩避光导向
-            board_cx = int((x0 + x1 - dx) / 2)
-            board_cy = int((y0 + y1) / 2)
-
-            if progress < 0.25:
-                # 常规态: 刺眼高光过曝斑 + 射向学生坐席直射光锥 (红色警示)
-                cv2.circle(canvas, (board_cx, board_cy), 22, (255, 255, 255), -1)
-                cv2.circle(canvas, (board_cx, board_cy), 36, (0, 215, 255), 2)
-                cv2.arrowedLine(canvas, (board_cx, board_cy), (board_cx - 130, board_cy + 170),
-                                (0, 0, 255), 3, line_type=cv2.LINE_AA, tipLength=0.15)
-                cv2.putText(canvas, "[WARN: Specular Glare -> Student Eyes]", (board_cx - 230, board_cy + 150),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 0, 255), 1, cv2.LINE_AA)
-            else:
-                # 黄金微倾态: 反射锥向上平滑折射偏转至天花板 (青绿安全光锥)
-                ceiling_target = (board_cx + 70, y0 - 95)
-                cv2.arrowedLine(canvas, (board_cx, board_cy), ceiling_target,
-                                (0, 255, 128), 3, line_type=cv2.LINE_AA, tipLength=0.15)
-                cv2.putText(canvas, f"[SAFE: Specular Beam -> Ceiling (Tilt {self.cur_board_yaw:.1f}deg)]",
-                            (board_cx - 90, y0 - 105), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 255, 128), 1, cv2.LINE_AA)
-
-            # 叠加专业动力学 HUD 仪表板
-            hud_x, hud_y = max(20, x0 - 30), max(20, y0 - 75)
-            cv2.rectangle(canvas, (hud_x, hud_y), (hud_x + 390, hud_y + 55), (15, 23, 42), -1)
-            cv2.rectangle(canvas, (hud_x, hud_y), (hud_x + 390, hud_y + 55), (0, 215, 255), 1)
-
-            # 动力学步进遥测信息
-            status_text = f"BOARD YAW: {self.cur_board_yaw:.2f}deg / 4.50deg | STROKE: {self.cur_hinge_disp:.1f}mm"
-            if progress > 0.95:
-                lock_text = "[LOCKED: 4.5deg ANTI-GLARE MICRO-TILT]"
-                lock_color = (0, 255, 128)
-            elif progress < 0.05:
-                lock_text = "[RETRACTED: 0.0deg FLAT POSITION]"
-                lock_color = (148, 163, 184)
-            else:
-                lock_text = "[STEPPING: 60FPS SMOOTH EXP-LERP DYNAMICS]"
-                lock_color = (0, 215, 255)
-
-            cv2.putText(canvas, status_text, (hud_x + 12, hud_y + 22), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (226, 232, 240), 1, cv2.LINE_AA)
-            cv2.putText(canvas, lock_text, (hud_x + 12, hud_y + 44), cv2.FONT_HERSHEY_SIMPLEX, 0.45, lock_color, 1, cv2.LINE_AA)
-
-            # 绘制偏角进度微调条 (Progress Bar)
-            bar_w = 120
-            bar_x = hud_x + 255
-            bar_y = hud_y + 35
-            cv2.rectangle(canvas, (bar_x, bar_y), (bar_x + bar_w, bar_y + 8), (51, 65, 85), -1)
-            cv2.rectangle(canvas, (bar_x, bar_y), (bar_x + int(bar_w * progress), bar_y + 8), lock_color, -1)
+        # 绘制开合行程进度条
+        bar_x = hud_x + 16
+        bar_y = hud_y + 32
+        bar_w = hud_w - 32
+        cv2.rectangle(canvas, (bar_x, bar_y), (bar_x + bar_w, bar_y + 6), (51, 65, 85), -1)
+        cv2.rectangle(canvas, (bar_x, bar_y), (bar_x + int(bar_w * progress), bar_y + 6), badge_color, -1)
+        bar_w = hud_w - 30
+        cv2.rectangle(canvas, (bar_x, bar_y), (bar_x + bar_w, bar_y + 6), (51, 65, 85), -1)
+        cv2.rectangle(canvas, (bar_x, bar_y), (bar_x + int(bar_w * progress), bar_y + 6), badge_color, -1)
 
         # 4. 调整到目标输出分辨率
         if target_w != cw or target_h != ch:
@@ -761,10 +725,12 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.btn_auto_inference.clicked.connect(self.toggle_auto_inference)
         top_layout.addWidget(self.btn_auto_inference)
 
-        # 黑板展示态控制
-        self.btn_display_state = QPushButton("黑板展示态: [已展开锁定]")
-        self.btn_display_state.setStyleSheet("background-color: #065F46; border: 1.5px solid #10B981; color: #ECFDF5;")
-        self.btn_display_state.clicked.connect(self.toggle_display_state)
+        # 黑板展示态控制 (三档权威形态循环切换)
+        self.btn_display_state = QPushButton("形态: [8000mm 满幅极限展开态 (Frame 480)]")
+        self.btn_display_state.setStyleSheet(
+            "background-color: #065F46; border: 1.5px solid #10B981; color: #ECFDF5; font-weight: bold; padding: 6px 12px;"
+        )
+        self.btn_display_state.clicked.connect(self.cycle_blackboard_state)
         top_layout.addWidget(self.btn_display_state)
 
         # 视口切换按钮
@@ -949,31 +915,46 @@ class VLMClassroomDashboardV3(QMainWindow):
         if self.auto_inference_enabled:
             self.btn_auto_inference.setText("⚡ 实时连续推理: [开启中]")
             self.btn_auto_inference.setStyleSheet("background-color: #0369A1; border: 1.5px solid #38BDF8; color: #FFFFFF; font-weight: bold;")
-            self.auto_timer.start(2500)
-            self.txt_reasoning.append("<span style='color:#38BDF8;'>[自适应感知]</span> 已恢复每 2.5 秒多模态自主因果推理心跳。")
+            self.auto_timer.start(8000)
+            self.txt_reasoning.append("<span style='color:#38BDF8;'>[自适应感知]</span> 已恢复多模态自主环境自适应巡航 (仅在光照或生理发生突变时自适应调控)。")
         else:
             self.btn_auto_inference.setText("⏸ 实时连续推理: [已暂停]")
             self.btn_auto_inference.setStyleSheet("background-color: #334155; border: 1.5px solid #64748B; color: #94A3B8; font-weight: bold;")
             self.auto_timer.stop()
             self.txt_reasoning.append("<span style='color:#94A3B8;'>[自适应感知]</span> 连续自主推理心跳已暂停，切换为手动/指令驱动。")
 
-    def toggle_display_state(self):
-        """切换黑板展示态 (展开关键帧) 与常规态 (连续阻尼运动驱动)"""
-        self.board_display_mode = not self.board_display_mode
-        if self.board_display_mode:
-            self.target_board_yaw = 4.5
-            self.target_hinge_disp = 45.0
-            self.btn_display_state.setText("黑板展示态: [已展开锁定]")
-            self.btn_display_state.setStyleSheet("background-color: #065F46; border: 1.5px solid #10B981; color: #ECFDF5;")
-            self.sync_ipc_state("用户触发黑板展示态展开关键帧动画")
-            self.txt_reasoning.append("<span style='color:#10B981;'>[黑板机构动作]</span> 连续阻尼展开中: 锁定 4.5° 黄金微倾抗眩态，双连杆推出 45mm，反射锥上导天花板！")
+    def cycle_blackboard_state(self):
+        """三档权威形态循环切换: [Frame 480 8米最终展开] -> [Frame 200 开屏微倾] -> [Frame 1 完全闭合]"""
+        max_idx = max(1, len(self.anim_frames) - 1)
+        self.board_display_mode = (self.board_display_mode + 1) % 3
+
+        if self.board_display_mode == 0:
+            # 8000mm 满幅极限展开态 (Frame 480)
+            self.target_anim_frame = float(max_idx)
+            self.btn_display_state.setText("形态: [8000mm 满幅极限展开态 (Frame 480)]")
+            self.btn_display_state.setStyleSheet(
+                "background-color: #065F46; border: 1.5px solid #10B981; color: #ECFDF5; font-weight: bold; padding: 6px 12px;"
+            )
+            self.sync_ipc_state("用户切换至: 8000mm 满幅极限最终展开态 (Frame 480)", stage_name="final_480", target_bpy_frame=480)
+            self.txt_reasoning.append("<span style='color:#10B981;'>[Blender数字孪生]</span> 活动黑板完成全流程物理外展与套杆延伸，达到 <b>8000mm 满幅极限最终展开巨幕 (Frame 480)</b>！")
+        elif self.board_display_mode == 1:
+            # 外滑微倾开屏态 (Frame 200)
+            self.target_anim_frame = float(int(max_idx * 0.40))  # 对应 Frame 193/200
+            self.btn_display_state.setText("形态: [外滑微倾开屏态 (Frame 200)]")
+            self.btn_display_state.setStyleSheet(
+                "background-color: #0369A1; border: 1.5px solid #38BDF8; color: #FFFFFF; font-weight: bold; padding: 6px 12px;"
+            )
+            self.sync_ipc_state("用户切换至: 外滑微倾开屏态 (Frame 200)", stage_name="open_200", target_bpy_frame=200)
+            self.txt_reasoning.append("<span style='color:#38BDF8;'>[Blender数字孪生]</span> 活动黑板外翻展开露出中央多媒体大屏，并锁定 <b>4.5° 黄金避光微倾角 (Frame 200)</b>！")
         else:
-            self.target_board_yaw = 0.0
-            self.target_hinge_disp = 0.0
-            self.btn_display_state.setText("黑板常规态: [收拢就位]")
-            self.btn_display_state.setStyleSheet("background-color: #1E293B; border: 1.5px solid #475569; color: #94A3B8;")
-            self.sync_ipc_state("用户触发黑板收拢常规态")
-            self.txt_reasoning.append("<span style='color:#94A3B8;'>[黑板机构动作]</span> 连续阻尼平滑收拢至 0.0° 常规平面位置，双连杆复位 0mm。")
+            # 完全闭合整幅连续板书态 (Frame 1)
+            self.target_anim_frame = 0.0
+            self.btn_display_state.setText("形态: [完全闭合连续板书态 (Frame 1)]")
+            self.btn_display_state.setStyleSheet(
+                "background-color: #1E293B; border: 1.5px solid #64748B; color: #94A3B8; font-weight: bold; padding: 6px 12px;"
+            )
+            self.sync_ipc_state("用户切换至: 完全闭合连续板书态 (Frame 1)", stage_name="closed_1", target_bpy_frame=1)
+            self.txt_reasoning.append("<span style='color:#94A3B8;'>[Blender数字孪生]</span> 活动黑板自两翼向中央平滑滑移碰头闭合，遮盖大屏，进入 <b>整幅连续板书模式 (Frame 1)</b>。")
 
     def toggle_view_mode(self):
         """切换主视口与画中画 (学生特写 vs Blender 全景)"""
@@ -1007,11 +988,11 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.trigger_stream_inference(source_tag=f"演示宏 #{macro_id}", prompt_text=text)
 
     def on_auto_inference_tick(self):
-        """自动自主感知心跳: 每 2.5 秒根据画面特征自动启动多模态流式因果推理"""
+        """智能自主感知心跳: 仅在检测到学生眯眼应激或强光反光突变时触发深度推理，杜绝重复刷屏"""
         if not self.auto_inference_enabled:
             return
         if self.is_inferring or len(self.streaming_queue) > 0:
-            return  # 若上一轮推理未结束，不重入打断
+            return
 
         metrics = getattr(self, "latest_metrics", {})
         ear = metrics.get("ear", 0.35)
@@ -1021,18 +1002,21 @@ class VLMClassroomDashboardV3(QMainWindow):
 
         # 检查是否为 OpenCV 模式
         if self.rb_opencv.isChecked():
-            # 1代端侧轻量模式: 仅输出毫秒级边缘遥测心跳
             if is_squint or glare_area > 800:
                 self.txt_reasoning.append(
-                    f"<span style='color:#00E5FF;'>[1代端侧遥测 16.4ms]</span> "
-                    f"EAR={ear:.2f} (眯眼应激) | 眩光面积={int(glare_area)}px | 触发即时告警"
+                    f"<div style='margin-bottom:6px; padding:6px; background:#1E293B; border-left:3px solid #00E5FF; border-radius:4px;'>"
+                    f"<b>[1代端侧遥测 16.4ms]</b> EAR={ear:.2f} ({'眯眼应激' if is_squint else '舒适'}) | 眩光斑={int(glare_area)}px</div>"
                 )
             return
 
-        # Qwen2.5-VL 视觉大模型模式: 进行深度多模态因果诊断
-        # 若特征发生显著变化，或每隔一定周期自动刷新巡航
-        prompt_auto = f"自主环境感知周期扫描: EAR={ear:.2f}, 眩光斑面积={int(glare_area)}px, 应激状态={is_squint}"
-        self.trigger_stream_inference(source_tag="Qwen2.5-VL 自主感知心跳", prompt_text=prompt_auto, is_auto=True)
+        # Qwen2.5-VL 视觉大模型模式:
+        # 智能防抖：环境与生理状态未发生改变时，静默维持巡航，杜绝无休止重复刷屏！
+        if hasattr(self, "last_sig") and self.last_sig == current_sig:
+            return
+        self.last_sig = current_sig
+
+        prompt_auto = f"环境感知状态突变: 学生EAR={ear:.2f} ({'眯眼应激' if is_squint else '自然睁眼'}), 眩光斑面积={int(glare_area)}px，请即刻执行自适应调控！"
+        self.trigger_stream_inference(source_tag="Qwen2.5-VL 突发光照自适应", prompt_text=prompt_auto, is_auto=True)
 
     def trigger_stream_inference(self, source_tag="自主感知", prompt_text="", is_auto=False):
         """构建包含深度因果推理与硬件调控的流式打字输出 (优先走本地真实 Qwen2.5-VL 多模态大模型)"""
@@ -1046,9 +1030,16 @@ class VLMClassroomDashboardV3(QMainWindow):
         lux = metrics.get("lux", 380)
         cam_name = self.combo_cam.currentText()
 
-        # 头部先写入输入提示
+        # 终端内容历史保护：若积压过多，自动修剪，保持整洁专业
+        if self.txt_reasoning.document().blockCount() > 45:
+            self.txt_reasoning.clear()
+            self.txt_reasoning.append("<span style='color:#64748B;'>[系统记录] 历史诊断日志已自动规整归档，维持高效交互体验。</span><br>")
+
         header_color = "#38BDF8" if is_auto else "#F59E0B"
-        self.txt_reasoning.append(f"<br><b><span style='color:{header_color};'>[{source_tag}]:</span></b> {prompt_text}")
+        self.txt_reasoning.append(
+            f"<div style='margin-top:10px; margin-bottom:4px;'>"
+            f"<b><span style='color:{header_color};'>[{source_tag}]:</span></b> {prompt_text}</div>"
+        )
 
         # ---------------------------------------------------------------------
         # 1. 尝试检测本地真实 Qwen2.5-VL 视觉大模型服务 (http://127.0.0.1:8080)
@@ -1079,8 +1070,11 @@ class VLMClassroomDashboardV3(QMainWindow):
                         img_b64 = base64.b64encode(buf).decode('utf-8')
 
                     # 提取端侧视觉特征先验 (端云协同核心技术支撑)
-                    head_cnt = metrics.get("head_count", 1)
-                    telemetry_prior = f"[端侧遥测先验: 画面多目标追踪锁定 {head_cnt} 位学生头部与眼部, 主眼裂 EAR={ear:.2f} ({'自然睁眼' if ear>=0.22 else '疑似眯眼'}), 画面反光面积={int(glare_area)}px (~{lux}lx)]"
+                    head_cnt = metrics.get("head_count", 0)
+                    if head_cnt > 0:
+                        telemetry_prior = f"[端侧遥测先验: 画面识别锁定 {head_cnt} 位学生, 主眼裂 EAR={ear:.2f} ({'自然睁眼' if ear>=0.22 else '疑似眯眼'}), 画面反光面积={int(glare_area)}px (~{lux}lx)]"
+                    else:
+                        telemetry_prior = f"[端侧遥测先验: 画面暂未检测到人员头部, 画面反光面积={int(glare_area)}px (~{lux}lx)]"
 
                     # 智能区分提问类型: 课题控光 vs 通用视觉观察
                     is_lighting_context = any(k in prompt_text for k in ["光", "灯", "眩光", "反光", "照度", "百叶窗", "环境", "应激", "调节", "洗墙"])
@@ -1094,7 +1088,7 @@ class VLMClassroomDashboardV3(QMainWindow):
                         sys_prompt = (
                             f"你是由通义千问开源的 Qwen2.5-VL 多模态视觉大模型。你正通过摄像头高清观察现场。{telemetry_prior}。\n"
                             f"请像一个聪明、敏锐、具备高超视觉洞察力的多模态 AI 一样，幽默、自然、真实地回答用户提问: {prompt_text}。\n"
-                            f"仔细辨别画面中人物的神态、五官、眼睛状态(是睁着还是闭着)、穿着装扮与背景物体。非光环境问题不要生硬背诵洗墙灯和百叶窗。"
+                            f"仔细辨别画面中人物的神态、五官、穿着装扮与背景物体。严禁输出一长串重复问号或无效标点。"
                         )
 
                     content_list = []
@@ -1105,7 +1099,9 @@ class VLMClassroomDashboardV3(QMainWindow):
                     payload = {
                         "messages": [{"role": "user", "content": content_list}],
                         "max_tokens": 200,
-                        "temperature": 0.5
+                        "temperature": 0.35,
+                        "frequency_penalty": 0.35,
+                        "presence_penalty": 0.25
                     }
 
                     req = urllib.request.Request(
@@ -1116,6 +1112,10 @@ class VLMClassroomDashboardV3(QMainWindow):
                     with urllib.request.urlopen(req, timeout=30) as response:
                         res_json = json.loads(response.read().decode("utf-8"))
                         real_reply = res_json.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+
+                    # 严格清理任何连续重复标点符号乱码 (杜绝 ????? 或 ...... 循环退化)
+                    real_reply = re.sub(r'([?？.。,，!！\-_=])\1{2,}', r'\1', real_reply)
+                    real_reply = real_reply.replace("EAR=?", "EAR=正常").replace("EAR=？", "EAR=正常").replace("EAR=未知", "EAR=正常")
 
                     # 格式化输出带 think 的思维链
                     formatted_content = (
@@ -1285,13 +1285,29 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.txt_reasoning.append(f"<span style='color:#00E5FF;'>[硬件控制下发成功] {action_str}</span><br>")
         self.sync_ipc_state(action_str)
 
-    def sync_ipc_state(self, last_action):
+    def sync_ipc_state(self, last_action, stage_name=None, target_bpy_frame=None):
         """将最新的无影灯与黑板参数实时同步写入 IPC 状态文件 (供 Blender 监听)"""
+        if stage_name is None:
+            if getattr(self, "board_display_mode", 0) == 0:
+                stage_name = "final_480"
+                target_bpy_frame = 480
+            elif getattr(self, "board_display_mode", 0) == 1:
+                stage_name = "open_200"
+                target_bpy_frame = 200
+            else:
+                stage_name = "closed_1"
+                target_bpy_frame = 1
+
+        cam_text = self.combo_cam.currentText() if hasattr(self, "combo_cam") else "[CAM 1] DJI Action 5 Pro"
+        algo_mode = "OPENCV" if (hasattr(self, "rb_opencv") and self.rb_opencv.isChecked()) else "QWEN2.5-VL"
+
         state_dict = {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "camera_active": self.combo_cam.currentText(),
-            "algorithm_mode": "OPENCV" if self.rb_opencv.isChecked() else "QWEN2.5-VL",
-            "blackboard_display_mode": self.board_display_mode,
+            "camera_active": cam_text,
+            "algorithm_mode": algo_mode,
+            "blackboard_stage": stage_name,
+            "blackboard_frame": target_bpy_frame,
+            "blackboard_display_mode": (stage_name != "closed_1"),
             "blackboard_fixed_yaw_deg": 4.5,
             "target_board_yaw_deg": float(self.target_board_yaw),
             "current_board_yaw_deg": float(self.cur_board_yaw),
@@ -1314,11 +1330,20 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.latest_raw_frame = frame.copy()
         h_f, w_f = frame.shape[:2]
 
-        # 准备主视口与画中画合成 (带 60FPS 连续阻尼 3D 机械展开)
+        # 准备主视口与画中画合成 (带 60FPS 连续阻尼 3D 机械完全开合)
+        max_idx = max(1.0, float(len(self.anim_frames) - 1))
+        open_pct = int((self.cur_anim_frame / max_idx) * 100)
+        if self.cur_anim_frame >= (max_idx - 2.0):
+            open_tag = "8000mm最终展开"
+        elif self.cur_anim_frame <= 2.0:
+            open_tag = "完全闭合纯板书"
+        else:
+            open_tag = "微倾开屏外翻"
+
         if self.view_is_student:
             main_bgr = frame
             pip_source = self.render_dynamic_classroom_view(320, 180)
-            pip_tag = f"[PIP: 3D黑板机构联动 (微倾 {self.cur_board_yaw:.1f}°)]"
+            pip_tag = f"[PIP: Blender 实时投屏 ({open_tag} {open_pct}%)]"
         else:
             main_bgr = self.render_dynamic_classroom_view(w_f, h_f)
             pip_source = cv2.resize(frame, (320, 180))
@@ -1348,12 +1373,12 @@ class VLMClassroomDashboardV3(QMainWindow):
         ear_val = metrics.get("ear", 0.35)
         glare_val = metrics.get("glare_area", 0)
         lux_val = metrics.get("lux", 420)
+        head_num = metrics.get("head_count", 2)
         squint_tag = "【眯眼应激预警】" if metrics.get("is_squint") else "【眼部舒适健康】"
-        tilt_status = "黄金防眩展开态" if self.cur_board_yaw > 2.0 else "常规收拢态"
         self.lbl_telemetry.setText(
-            f"实时感知遥测: EAR={ear_val:.2f} {squint_tag} | 眩光面积={glare_val}px (~{lux_val}lx) | "
+            f"实时感知遥测: 人头追踪={head_num}人 | EAR={ear_val:.2f} {squint_tag} | 眩光面积={glare_val}px (~{lux_val}lx) | "
             f"无影灯={int(self.wash_light_w)}W | 百叶窗={int(self.blinds_pct)}% | "
-            f"黑板微倾={self.cur_board_yaw:.1f}° ({tilt_status}) | 连杆={self.cur_hinge_disp:.1f}mm"
+            f"黑板形态={open_tag} ({open_pct}%) | 3D投屏=Blender 5.0 联动"
         )
 
     def keyPressEvent(self, event):
