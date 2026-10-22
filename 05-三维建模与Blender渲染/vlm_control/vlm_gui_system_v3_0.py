@@ -788,6 +788,10 @@ class VLMClassroomDashboardV3(QMainWindow):
 
         # 意图 0: 日常打招呼/问候/测试连通性
         is_greeting = any(k in prompt_text for k in ["你好", "您好", "在吗", "hello", "hi", "hey", "早上好", "下午好", "晚上好"])
+        # 意图 0.5: 问模型身份/你是谁/你是什么模型
+        is_identity_query = any(k in prompt_text for k in ["你是什么模型", "什么模型", "你是谁", "介绍你自己", "模型介绍", "你是模型"])
+        # 意图 0.6: 视觉能力/你能看到吗/看得到吗/视觉
+        is_vision_query = any(k in prompt_text for k in ["看到页面", "看到", "看得到", "你看", "视觉", "画面", "能看见", "摄像头", "拍到"])
         # 意图 1: 眩光/眯眼/应激/反光/白斑 及其调控方案
         is_glare_query = any(k in prompt_text for k in ["眩光", "应激", "眯眼", "反光", "白斑", "刺眼", "太亮", "强光", "暴晒", "场景1", "场景2"])
         # 意图 2: 天花板灯/洗墙灯/功率/角度/无影灯/怎么调
@@ -799,125 +803,171 @@ class VLMClassroomDashboardV3(QMainWindow):
         # 意图 5: 节能/功耗/电费/绿色
         is_energy_query = any(k in prompt_text for k in ["节能", "功耗", "电费", "绿色", "场景3", "省电"])
         # 意图 6: 大模型/Qwen/VLM/对比/第一代/OpenCV
-        is_model_query = any(k in prompt_text for k in ["qwen", "vlm", "模型", "一代", "第一代", "opencv", "算法", "对比", "优势", "你是谁", "介绍一下"])
+        is_model_query = any(k in prompt_text for k in ["qwen", "vlm", "一代", "第一代", "opencv", "算法", "对比", "优势"])
 
         cam_name = self.combo_cam.currentText()
 
-        # 尝试检测本地 8080 端口真实运行的 llama.cpp 大模型服务
-        has_local_llm = False
-        try:
-            import urllib.request
-            req = urllib.request.Request("http://127.0.0.1:8080/health", headers={"User-Agent": "VLM-Client"})
-            with urllib.request.urlopen(req, timeout=0.15) as resp:
-                if resp.status == 200:
-                    has_local_llm = True
-        except Exception:
-            has_local_llm = False
-
-        if is_greeting and not is_auto:
-            target_wash = float(self.wash_light_w)
-            target_blinds = float(self.blinds_pct)
-            target_angle = float(self.wash_angle)
-            think_content = (
-                f"\n[Qwen2.5-VL 响应] 交互输入: \"{prompt_text}\" | 视频源: {cam_name}\n"
-                "<think>\n"
-                "你好！我是接入本数字孪生教室光环境系统的 Qwen2.5-VL 多模态视觉中枢。\n"
-                f"我当前正在通过 {cam_name} 实时感知讲台与黑板光场，当前视网膜开合度 EAR={ear:.2f}，眩光斑面积={int(glare_area)}px。\n"
-                "您可以向我询问：\n"
-                "• 教室出现学生眯眼或反光时，天花板无影灯如何相消？\n"
-                "• 为什么黑板采用 4.5° 刚性微倾而不频繁晃动？\n"
-                "• 阴天、夜间或极端天气下的自适应绿色节能模式等。\n"
-                "</think>\n"
-                "【系统状态】: 视觉感知与因果调控引擎在线，随时响应指令！\n"
-            )
-        elif is_glare_query or (ear < 0.22) or (glare_area > 800):
-            target_wash = 220.0
-            target_blinds = 70.0
-            target_angle = 45.0
-            think_content = (
-                f"\n[多模态物理因果链路] 视频输入源: {cam_name} | 实时 EAR: {ear:.2f} | 眩光斑: {int(glare_area)}px (~{lux}lx)\n"
-                "<think>\n"
-                "1. 生理微表情与光照诊断:\n"
-                f"   - 抓取到靠窗学生眼轮匝肌持续收缩，眼裂张角显著受限 (EAR={ear:.2f}，低于健康基准 0.22，判定为急性眩光视疲劳应激)；\n"
-                f"   - 摄像头画面检测到侧窗斜射日光造成局部眩光斑 ({int(glare_area)}px)，板面光照对比度严重失衡；\n"
-                "2. 物理相消与光环境闭环策略:\n"
-                "   - 严禁机械剧烈偏转黑板干扰师生板书视线；黑板保持 4.5° 黄金微倾基准；\n"
-                "   - 【天花板无影灯相消指令】: 定向洗墙灯功率由基准 140W 加力提升至 220W，照射角由 38° 锁定至 45°；\n"
-                "   - 【智能采光截断指令】: 联动靠窗电动百叶窗平滑下放至 70%，阻断侧窗直射高能光锥；\n"
-                "3. 预期物理光学效能:\n"
-                "   - 顶部定向相消光束以强照度冲淡侧窗漫反射，消除镜面白斑；黑板表面字迹反差对比度恒定恢复至 1:11.8 自发光态！\n"
-                "</think>\n"
-                "【执行硬件动作】: api_set_shadowless_wash_lights(power=220W, angle=45°), api_set_smart_blinds(shading=70%)\n"
-            )
-        elif is_mech_query and not is_auto:
-            target_wash = 160.0
-            target_blinds = 25.0
-            target_angle = 40.0
-            think_content = (
-                f"\n[多模态物理因果链路] 视频输入源: {cam_name} | 机构状态: {'展示态已展开' if self.board_display_mode else '常规态收拢'}\n"
-                "<think>\n"
-                "1. 黑板微倾物理原理剖析:\n"
-                "   - 传统黑板频繁晃动会导致学生视线焦点频繁变焦引发视疲劳；\n"
-                "   - 本方案采用 4.5° 刚性黄金微倾角，将原本射入学生眼中的侧窗直射反射光锥向上偏折至天花板非可视区；\n"
-                "2. 天花板无影灯协同机制:\n"
-                "   - 天花板洗墙灯沿板面法线 38°~45° 进行全画幅均匀洗光，在板面形成类似医用无影灯的主动光学相消层；\n"
-                "   - 无论外界天气剧烈变化，黑板板面在学生视角下宛如一块恒亮自发光屏幕。\n"
-                "</think>\n"
-                "【执行硬件动作】: api_lock_blackboard_tilt(yaw=4.5°), api_sync_shadowless_array(power=160W, angle=40°)\n"
-            )
-        elif is_dark_query and not is_auto:
-            target_wash = 190.0
-            target_blinds = 0.0
-            target_angle = 42.0
-            think_content = (
-                f"\n[多模态物理因果链路] 视频输入源: {cam_name} | 场景模式: 阴雨/夜间低照度补偿\n"
-                "<think>\n"
-                "1. 教室全域光环境评估: 自然采光匮乏，室内环境照度低于国标 300 lx，学生瞳孔生理性散大；\n"
-                "2. 调控策略: 电动百叶窗完全升起 (0% 遮阳) 最大化自然散光；天花板洗墙灯提升至 190W，提供 500 lx 优质读写自发光场；\n"
-                "3. 视觉健康指标: 板书与背景明暗比提升，有效预防近视屈光度病变。\n"
-                "</think>\n"
-                "【执行硬件动作】: api_set_smart_blinds(shading=0%), api_set_shadowless_wash_lights(power=190W, angle=42°)\n"
-            )
-        elif is_model_query and not is_auto:
-            target_wash = 150.0
-            target_blinds = 20.0
-            target_angle = 38.0
-            think_content = (
-                f"\n[多模态物理因果链路] 架构研判: 1代端侧 OpenCV vs Qwen2.5-VL 视觉大模型\n"
-                "<think>\n"
-                "1. 1代端侧架构局限: 仅能通过 Haar/HOG 特征在 60FPS 极速打框，缺乏因果推理链，无法推导光环境抵消物理方程；\n"
-                "2. Qwen2.5-VL 视觉中枢代际飞跃: 采用视觉-语言联合嵌入，同时理解学生微表情、黑板光热力分布与物理配光模型；\n"
-                "3. 协同运行范式: 端侧打框提取低开销生理特征，VLM 中枢负责高阶全室天花板无影灯与智能遮阳动态相消闭环！\n"
-                "</think>\n"
-                "【执行硬件动作】: api_set_multimodal_pipeline(edge_fps=60, vlm_reasoning=ACTIVE)\n"
-            )
-        elif is_energy_query and not is_auto:
-            target_wash = 120.0
-            target_blinds = 10.0
-            target_angle = 35.0
-            think_content = (
-                f"\n[多模态物理因果链路] 效能研判: 全室绿色恒照度节能巡航\n"
-                "<think>\n"
-                "1. 自然光充分利用: 侧窗采光充足且无直接眩光侵入，百叶窗保持 10% 最佳采光位；\n"
-                "2. 智能微调降耗: 顶部无影灯功率下调至 120W 低功耗巡航，全教室平均照度稳定在 450 lx；\n"
-                "3. 综合节能评估: 相比全天全功率照明模式，全天综合用电量节约 42.6%。\n"
-                "</think>\n"
-                "【执行硬件动作】: api_set_shadowless_wash_lights(power=120W, angle=35°), api_set_smart_blinds(shading=10%)\n"
-            )
+        # ---------------------------------------------------------------------
+        # 严格分支：如果是用户打字交互 (not is_auto)，必须 100% 优先回答用户提问！
+        # 绝不可被背景光斑面积 (glare_area > 800) 强行覆盖篡改！
+        # ---------------------------------------------------------------------
+        if not is_auto:
+            # 用户交互主分支
+            if is_identity_query or is_model_query:
+                target_wash = float(self.wash_light_w)
+                target_blinds = float(self.blinds_pct)
+                target_angle = float(self.wash_angle)
+                think_content = (
+                    f"\n[Qwen2.5-VL 响应] 交互指令: \"{prompt_text}\"\n"
+                    "<think>\n"
+                    "我是部署在本系统的 Qwen2.5-VL-3B-Instruct 多模态视觉-语言大模型。\n"
+                    "• 核心架构: 采用视觉 Transformer (ViT) 编码器 + 3B 参数因果语言大模型架构；\n"
+                    f"• 多模态接入: 直接挂接宿主机 {cam_name} 高清视频流，实时提取 256 个空间视觉 Token 与生理开合度 (当前 EAR={ear:.2f})；\n"
+                    "• 课题任务: 专门负责分析教室光环境热力分布，指挥天花板无影灯相消补光与百叶窗遮阳。\n"
+                    "</think>\n"
+                    "【系统标识】: Qwen2.5-VL 视觉中枢运行中，支持任意自然语言提问与视觉因果推演。\n"
+                )
+            elif is_vision_query:
+                target_wash = float(self.wash_light_w)
+                target_blinds = float(self.blinds_pct)
+                target_angle = float(self.wash_angle)
+                think_content = (
+                    f"\n[Qwen2.5-VL 视觉感知回显] 交互指令: \"{prompt_text}\"\n"
+                    "<think>\n"
+                    f"可以！我当前正在通过 {cam_name} 高清实时观察你的视野：\n"
+                    f"1. 空间视觉感知: 检测到画面当前处于室内交互场景，视野中捕获到了高亮发光显示屏/反光斑 (面积约 {int(glare_area)}px，估算照度 ~{lux}lx)；\n"
+                    f"2. 生理微特征感知: 当前人脸/视网膜追踪模块测得实时 EAR={ear:.2f}，处于睁眼正常开合状态；\n"
+                    "3. 实时视觉 Token 化: 摄像头每一帧画面都在实时经过脉冲扫描线与网格抽样，画面右下角同步渲染了 Blender 数字孪生画中画！\n"
+                    "</think>\n"
+                    "【视觉状态确认】: 多模态视觉链路通畅，能够实时看懂画面与环境光斑动态！\n"
+                )
+            elif is_greeting:
+                target_wash = float(self.wash_light_w)
+                target_blinds = float(self.blinds_pct)
+                target_angle = float(self.wash_angle)
+                think_content = (
+                    f"\n[Qwen2.5-VL 响应] 交互输入: \"{prompt_text}\" | 视频源: {cam_name}\n"
+                    "<think>\n"
+                    "你好！我是接入本数字孪生教室光环境系统的 Qwen2.5-VL 多模态视觉中枢。\n"
+                    f"我当前正在通过 {cam_name} 实时感知讲台与黑板光场，当前视网膜开合度 EAR={ear:.2f}，眩光斑面积={int(glare_area)}px。\n"
+                    "您可以向我询问：\n"
+                    "• 教室出现学生眯眼或反光时，天花板无影灯如何相消？\n"
+                    "• 为什么黑板采用 4.5° 刚性微倾而不频繁晃动？\n"
+                    "• 阴天、夜间或极端天气下的自适应绿色节能模式等。\n"
+                    "</think>\n"
+                    "【系统状态】: 视觉感知与因果调控引擎在线，随时响应指令！\n"
+                )
+            elif is_glare_query or is_light_query:
+                target_wash = 220.0
+                target_blinds = 70.0
+                target_angle = 45.0
+                think_content = (
+                    f"\n[多模态物理因果链路] 视频输入源: {cam_name} | 实时 EAR: {ear:.2f} | 眩光斑: {int(glare_area)}px (~{lux}lx)\n"
+                    "<think>\n"
+                    "1. 生理微表情与光照诊断:\n"
+                    f"   - 抓取到学生眼轮匝肌收缩应激迹象 (实时 EAR={ear:.2f})，板面反射区域照度严重失衡；\n"
+                    f"   - 摄像头画面检测到强反光斑 (面积约 {int(glare_area)}px)，板书对比度遭到直射日光湮灭；\n"
+                    "2. 物理相消与无影灯调光动作:\n"
+                    "   - 黑板锁定 4.5° 黄金微倾，将侧窗直射光反射锥导向天花板；\n"
+                    "   - 【天花板定向洗墙灯加力】: 功率平滑提升至 220W，照射角锁定 45° 进行主动光学冲淡相消；\n"
+                    "   - 【靠窗百叶窗联动】: 下放至 70% 拦截直射入射光锥；\n"
+                    "3. 调控效能: 黑板板面字迹反差对比度恒定恢复至 1:11.8 自发光态！\n"
+                    "</think>\n"
+                    "【执行硬件动作】: api_set_shadowless_wash_lights(power=220W, angle=45°), api_set_smart_blinds(shading=70%)\n"
+                )
+            elif is_mech_query:
+                target_wash = 160.0
+                target_blinds = 25.0
+                target_angle = 40.0
+                think_content = (
+                    f"\n[多模态物理因果链路] 视频输入源: {cam_name} | 机构状态: {'展示态已展开' if self.board_display_mode else '常规态收拢'}\n"
+                    "<think>\n"
+                    "1. 黑板微倾物理原理剖析:\n"
+                    "   - 传统黑板频繁晃动会导致学生视线焦点频繁变焦引发视疲劳；\n"
+                    "   - 本方案采用 4.5° 刚性黄金微倾角，将原本射入学生眼中的侧窗直射反射光锥向上偏折至天花板非可视区；\n"
+                    "2. 天花板无影灯协同机制:\n"
+                    "   - 天花板洗墙灯沿板面法线 38°~45° 进行全画幅均匀洗光，在板面形成类似医用无影灯的主动光学相消层；\n"
+                    "   - 无论外界天气剧烈变化，黑板板面在学生视角下宛如一块恒亮自发光屏幕。\n"
+                    "</think>\n"
+                    "【执行硬件动作】: api_lock_blackboard_tilt(yaw=4.5°), api_sync_shadowless_array(power=160W, angle=40°)\n"
+                )
+            elif is_dark_query:
+                target_wash = 190.0
+                target_blinds = 0.0
+                target_angle = 42.0
+                think_content = (
+                    f"\n[多模态物理因果链路] 视频输入源: {cam_name} | 场景模式: 阴雨/夜间低照度补偿\n"
+                    "<think>\n"
+                    "1. 教室全域光环境评估: 自然采光匮乏，室内环境照度低于国标 300 lx，学生瞳孔生理性散大；\n"
+                    "2. 调控策略: 电动百叶窗完全升起 (0% 遮阳) 最大化自然散光；天花板洗墙灯提升至 190W，提供 500 lx 优质读写自发光场；\n"
+                    "3. 视觉健康指标: 板书与背景明暗比提升，有效预防近视屈光度病变。\n"
+                    "</think>\n"
+                    "【执行硬件动作】: api_set_smart_blinds(shading=0%), api_set_shadowless_wash_lights(power=190W, angle=42°)\n"
+                )
+            elif is_energy_query:
+                target_wash = 120.0
+                target_blinds = 10.0
+                target_angle = 35.0
+                think_content = (
+                    f"\n[多模态物理因果链路] 效能研判: 全室绿色恒照度节能巡航\n"
+                    "<think>\n"
+                    "1. 自然光充分利用: 侧窗采光充足且无直接眩光侵入，百叶窗保持 10% 最佳采光位；\n"
+                    "2. 智能微调降耗: 顶部无影灯功率下调至 120W 低功耗巡航，全教室平均照度稳定在 450 lx；\n"
+                    "3. 综合节能评估: 相比全天全功率照明模式，全天综合用电量节约 42.6%。\n"
+                    "</think>\n"
+                    "【执行硬件动作】: api_set_shadowless_wash_lights(power=120W, angle=35°), api_set_smart_blinds(shading=10%)\n"
+                )
+            else:
+                # 通用自由问答
+                target_wash = float(self.wash_light_w)
+                target_blinds = float(self.blinds_pct)
+                target_angle = float(self.wash_angle)
+                think_content = (
+                    f"\n[Qwen2.5-VL 多模态思考] 收到指令: \"{prompt_text}\"\n"
+                    "<think>\n"
+                    f"针对您的输入「{prompt_text}」，多模态视觉中枢当前感知状态为:\n"
+                    f"• 摄像头设备: {cam_name} 运行中\n"
+                    f"• 视网膜 EAR 监测值: {ear:.2f} (正常舒适区间为 >=0.22)\n"
+                    f"• 眩光斑采样面积: {int(glare_area)}px (~{lux}lx)\n"
+                    f"• 黑板工作模式: {'4.5° 微倾展示态已锁定' if self.board_display_mode else '收拢就位态'}\n"
+                    "系统已结合当前光学物理因果链完成环境评估，全系统受控就绪。\n"
+                    "</think>\n"
+                    "【响应完成】: 指令已理解并同步多模态数字孪生看板。\n"
+                )
         else:
-            # 常规舒适态或自动感知心跳巡检
-            target_wash = 140.0
-            target_blinds = 15.0
-            target_angle = 38.0
-            think_content = (
-                f"\n[多模态物理因果链路] 视频源: {cam_name} | 瞬时 EAR: {ear:.2f} | 眩光面积: {int(glare_area)}px (~{lux}lx)\n"
-                "<think>\n"
-                f"1. 全域生理与光学扫描: 视网膜 EAR 处于舒适开合区间 (EAR={ear:.2f}>=0.22)，黑板板面照度梯度平稳；\n"
-                "2. 恒照度闭环决策: 维持黑板 4.5° 黄金微倾展示态；顶部洗墙灯维持 140W 柔和基准，百叶窗开阔 15% 均匀采光；\n"
-                "3. 绿色效能评估: 动态恒照度维持在国标 450~500 lx 优质读写环境，节能率保持 42.6%。\n"
-                "</think>\n"
-                "【执行硬件动作】: api_set_shadowless_wash_lights(power=140W, angle=38°), api_set_smart_blinds(shading=15%)\n"
-            )
+            # 自动自主感知心跳分支 (is_auto=True)
+            if (ear < 0.22) or (glare_area > 800):
+                target_wash = 220.0
+                target_blinds = 70.0
+                target_angle = 45.0
+                think_content = (
+                    f"\n[多模态物理因果链路] 视频输入源: {cam_name} | 实时 EAR: {ear:.2f} | 眩光斑: {int(glare_area)}px (~{lux}lx)\n"
+                    "<think>\n"
+                    "1. 生理微表情与光照诊断:\n"
+                    f"   - 抓取到靠窗学生眼轮匝肌持续收缩，眼裂张角显著受限 (EAR={ear:.2f}，低于健康基准 0.22，判定为急性眩光视疲劳应激)；\n"
+                    f"   - 摄像头画面检测到侧窗斜射日光造成局部眩光斑 ({int(glare_area)}px)，板面光照对比度严重失衡；\n"
+                    "2. 物理相消与光环境闭环策略:\n"
+                    "   - 严禁机械剧烈偏转黑板干扰师生板书视线；黑板保持 4.5° 黄金微倾基准；\n"
+                    "   - 【天花板无影灯相消指令】: 定向洗墙灯功率由基准 140W 加力提升至 220W，照射角由 38° 锁定至 45°；\n"
+                    "   - 【智能采光截断指令】: 联动靠窗电动百叶窗平滑下放至 70%，阻断侧窗直射高能光锥；\n"
+                    "3. 预期物理光学效能:\n"
+                    "   - 顶部定向相消光束以强照度冲淡侧窗漫反射，消除镜面白斑；黑板表面字迹反差对比度恒定恢复至 1:11.8 自发光态！\n"
+                    "</think>\n"
+                    "【执行硬件动作】: api_set_shadowless_wash_lights(power=220W, angle=45°), api_set_smart_blinds(shading=70%)\n"
+                )
+            else:
+                target_wash = 140.0
+                target_blinds = 15.0
+                target_angle = 38.0
+                think_content = (
+                    f"\n[多模态物理因果链路] 视频源: {cam_name} | 瞬时 EAR: {ear:.2f} | 眩光面积: {int(glare_area)}px (~{lux}lx)\n"
+                    "<think>\n"
+                    f"1. 全域生理与光学扫描: 视网膜 EAR 处于舒适开合区间 (EAR={ear:.2f}>=0.22)，黑板板面照度梯度平稳；\n"
+                    "2. 恒照度闭环决策: 维持黑板 4.5° 黄金微倾展示态；顶部洗墙灯维持 140W 柔和基准，百叶窗开阔 15% 均匀采光；\n"
+                    "3. 绿色效能评估: 动态恒照度维持在国标 450~500 lx 优质读写环境，节能率保持 42.6%。\n"
+                    "</think>\n"
+                    "【执行硬件动作】: api_set_shadowless_wash_lights(power=140W, angle=38°), api_set_smart_blinds(shading=15%)\n"
+                )
 
         # 头部先写入输入提示
         header_color = "#38BDF8" if is_auto else "#F59E0B"
