@@ -368,6 +368,10 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.student_pov_bg = None     # 学生第一人称底图 (Camera_Student_POV_v2)
         self.latest_3d_optics = {}     # 三维光线追踪解算结果字典
         self.last_cruise_time = 0.0    # 全时在线巡航呼吸时间戳
+        self.cam_yaw = 0.0             # 360° 全景偏航角 (-180° ~ +180°)
+        self.cam_pitch = 0.0           # 360° 全景俯仰角 (-55° ~ +55°)
+        self.is_dragging_cam = False   # 鼠标右键拖拽环顾状态
+        self.cam_drag_start = None     # 鼠标右键按下起始坐标
 
         # -------------------------------------------------------------
         # 虚拟物理手电筒与光学反光模拟系统 (CASTIC 重点互动项)
@@ -612,50 +616,42 @@ class VLMClassroomDashboardV3(QMainWindow):
         return self.virtual_glare_metrics
 
     def eventFilter(self, source, event):
-        """捕获 3D 视口内鼠标拖拽手电筒靶心、滚轮调光、右键拖拽调光与右键开关手势"""
+        """捕获 3D 视口内鼠标右键拖拽 360° 全景环顾、左键拖拽手电筒靶心、滚轮调光"""
         vmode = getattr(self, "view_mode", 0)
         if source == self.lbl_video and (vmode in [0, 1] or not getattr(self, "view_is_student", False)):
             if event.type() == QtCore.QEvent.MouseButtonPress:
-                if event.button() == Qt.LeftButton:
+                if event.button() == Qt.RightButton:
+                    self.is_dragging_cam = True
+                    self.cam_drag_start = event.pos()
+                    return True
+                elif event.button() == Qt.LeftButton:
                     self.is_dragging_flashlight = True
                     self.map_and_update_flashlight(event.pos())
                     return True
-                elif event.button() == Qt.RightButton:
-                    self.is_right_down = True
-                    self.is_right_dragging = False
-                    self.right_press_pos = event.pos()
-                    self.last_right_pos = event.pos()
-                    self.toggle_flashlight()
+                elif event.button() == Qt.MiddleButton:
+                    # 中键一键复位视角
+                    self.cam_yaw = 0.0
+                    self.cam_pitch = 0.0
                     return True
             elif event.type() == QtCore.QEvent.MouseMove:
-                if getattr(self, "is_dragging_flashlight", False):
+                if getattr(self, "is_dragging_cam", False) and getattr(self, "cam_drag_start", None) is not None:
+                    curr_pos = event.pos()
+                    dx = curr_pos.x() - self.cam_drag_start.x()
+                    dy = curr_pos.y() - self.cam_drag_start.y()
+                    self.cam_yaw = float(np.clip(getattr(self, "cam_yaw", 0.0) + dx * 0.32, -180.0, 180.0))
+                    self.cam_pitch = float(np.clip(getattr(self, "cam_pitch", 0.0) - dy * 0.25, -55.0, 55.0))
+                    self.cam_drag_start = curr_pos
+                    return True
+                elif getattr(self, "is_dragging_flashlight", False):
                     self.map_and_update_flashlight(event.pos())
                     return True
-                elif getattr(self, "is_right_down", False) and getattr(self, "last_right_pos", None) is not None:
-                    curr_pos = event.pos()
-                    press_pos = getattr(self, "right_press_pos", curr_pos)
-                    dist_sq = (curr_pos.x() - press_pos.x()) ** 2 + (curr_pos.y() - press_pos.y()) ** 2
-                    if dist_sq > 9:  # 移动超过3像素判定为右键拖拽调光
-                        if not getattr(self, "is_right_dragging", False):
-                            self.is_right_dragging = True
-                            if not self.flashlight_enabled:
-                                self.flashlight_enabled = True
-                    if getattr(self, "is_right_dragging", False):
-                        dy = self.last_right_pos.y() - curr_pos.y()
-                        dx = curr_pos.x() - self.last_right_pos.x()
-                        delta = dy * 8.0 + dx * 3.0
-                        self.adjust_flashlight_power(delta)
-                        self.last_right_pos = curr_pos
-                        return True
             elif event.type() == QtCore.QEvent.MouseButtonRelease:
-                if event.button() == Qt.LeftButton:
-                    self.is_dragging_flashlight = False
+                if event.button() == Qt.RightButton:
+                    self.is_dragging_cam = False
+                    self.cam_drag_start = None
                     return True
-                elif event.button() == Qt.RightButton:
-                    self.is_right_down = False
-                    self.is_right_dragging = False
-                    self.right_press_pos = None
-                    self.last_right_pos = None
+                elif event.button() == Qt.LeftButton:
+                    self.is_dragging_flashlight = False
                     return True
             elif event.type() == QtCore.QEvent.Wheel:
                 delta = event.angleDelta().y()
@@ -754,29 +750,57 @@ class VLMClassroomDashboardV3(QMainWindow):
 
                 cv2.addWeighted(glare_overlay, glare_weight, canvas, 1.0 - glare_weight, 0, canvas)
 
-        # 3. 绘制天花板射下的【有形有质】主动相消无影洗墙光柱 (Volumetric Counter Beam)
+        # 3. 天花板 4 组定向无影洗墙灯具实体与立体有形光束网络 (带 360° 俯仰透视偏移)
+        yaw = getattr(self, "cam_yaw", 0.0)
+        pitch = getattr(self, "cam_pitch", 0.0)
+        shift_x = int((yaw / 90.0) * (cw * 0.38))
+        shift_y = int((pitch / 45.0) * (ch * 0.35))
+
+        ceil_y = int(35 + shift_y)
+        # 天花板科技导轨
+        cv2.line(canvas, (max(0, int(cw * 0.06) + shift_x), ceil_y),
+                         (min(cw, int(cw * 0.94) + shift_x), ceil_y), (65, 80, 100), 4, cv2.LINE_AA)
+
+        fx_centers = [
+            int(cw * 0.20) + shift_x,
+            int(cw * 0.40) + shift_x,
+            int(cw * 0.60) + shift_x,
+            int(cw * 0.80) + shift_x
+        ]
+
         wash_w = getattr(self, "wash_light_w", 140.0)
+        is_countering = wash_w > 160.0
         counter_factor = min(1.0, max(0.0, (wash_w - 140.0) / 80.0))
+
+        # 绘制 4 组灯具实体
+        for i, cx in enumerate(fx_centers):
+            if -80 <= cx <= (cw + 80) and -50 <= ceil_y <= (ch + 50):
+                cv2.rectangle(canvas, (cx - 55, ceil_y - 8), (cx + 55, ceil_y + 8), (20, 26, 36), -1)
+                cv2.rectangle(canvas, (cx - 55, ceil_y - 8), (cx + 55, ceil_y + 8), (0, 229, 255), 1)
+                core_c = (255, 255, 255) if is_countering else (180, 225, 255)
+                cv2.line(canvas, (cx - 48, ceil_y), (cx + 48, ceil_y), core_c, 2, cv2.LINE_AA)
+                cv2.putText(canvas, f"无影灯#{i+1}", (cx - 24, ceil_y - 12),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 229, 255), 1, cv2.LINE_AA)
+
+        # 绘制 4 道立体有形相消洗墙光柱 (穿透空间倾泻覆盖黑板)
         if wash_w > 145.0:
-            ceil_x = fx
-            ceil_y = 12
-            wash_beam_poly = np.array([
-                [ceil_x - 90, ceil_y],
-                [ceil_x + 90, ceil_y],
-                [ceil_x + 240, fy + 140],
-                [ceil_x - 240, fy + 140]
-            ], np.int32)
+            beam_overlay = np.zeros_like(canvas)
+            target_bottom_y = min(ch, int(540 + shift_y * 0.5))
+            for i, cx in enumerate(fx_centers):
+                poly = np.array([
+                    [cx - 48, ceil_y + 8],
+                    [cx + 48, ceil_y + 8],
+                    [cx + 175, target_bottom_y],
+                    [cx - 175, target_bottom_y]
+                ], np.int32)
+                cv2.fillPoly(beam_overlay, [poly], (255, 250, 230))
 
-            wash_overlay = canvas.copy()
-            cv2.fillPoly(wash_overlay, [wash_beam_poly], (255, 250, 230))
-            wash_overlay = self.fast_pyramid_blur(wash_overlay, 15)
+            beam_overlay = self.fast_pyramid_blur(beam_overlay, 15)
+            density = min(0.38, 0.14 + counter_factor * 0.22)
+            cv2.addWeighted(beam_overlay, density, canvas, 1.0 - density, 0, canvas)
 
-            beam_density = 0.16 + counter_factor * 0.34
-            cv2.addWeighted(wash_overlay, beam_density, canvas, 1.0 - beam_density, 0, canvas)
-
-            cv2.line(canvas, (ceil_x - 110, ceil_y + 4), (ceil_x + 110, ceil_y + 4), (0, 229, 255), 3)
-            status_tag = f"⚡ 天花板主动相消光柱: {int(wash_w)}W (调角 {int(getattr(self, 'wash_angle', 45))}°) [物理抵消进行中]"
-            cv2.putText(canvas, status_tag, (max(20, ceil_x - 200), ceil_y + 36),
+            status_tag = f"⚡ 天花板 4 路定向无影洗墙光束: {int(wash_w)}W (调角 {int(getattr(self, 'wash_angle', 48))}°) [空间覆盖相消中]"
+            cv2.putText(canvas, status_tag, (max(20, min(cw - 440, int(cw * 0.30) + shift_x)), max(30, ceil_y + 36)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.46, (0, 229, 255), 1, cv2.LINE_AA)
 
         # 4. 叠加手电筒交互准星与实时状态 HUD
@@ -808,10 +832,16 @@ class VLMClassroomDashboardV3(QMainWindow):
         cv2.drawMarker(canvas, (fx, fy), (0, 215, 255), cv2.MARKER_CROSS, 22, 1, cv2.LINE_AA)
         cv2.circle(canvas, (fx, fy), 10, (0, 215, 255), 1, cv2.LINE_AA)
 
-        hud_tip = f"手电筒: {int(power)} Lux | 反射落点: {opt_3d['seat_name']} (入射角{opt_3d['incident_deg']}°) | [左键拖拽 / 滚轮调光 / 右键开关 / V切视角]"
+        hud_tip = f"手电筒: {int(power)} Lux | 反射落点: {opt_3d['seat_name']} (入射角{opt_3d['incident_deg']}°) | [左键拖手电筒 / 滚轮调光 / V切视角]"
         base_r_disp = self.compute_specular_radius(power, getattr(self, 'flashlight_radius', 85))
-        cv2.putText(canvas, hud_tip, (max(20, fx - 160), min(ch - 30, fy + base_r_disp + 25)),
+        cv2.putText(canvas, hud_tip, (max(20, fx - 160), min(ch - 55, fy + base_r_disp + 25)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
+
+        # 叠加 360° 全景环顾 HUD 罗盘
+        hud_compass = f"🌐 3D全景环顾: 偏航[Yaw]={yaw:+.1f}° | 俯仰[Pitch]={pitch:+.1f}° | [右键按住拖拽环顾 / 中键复位]"
+        cv2.rectangle(canvas, (20, ch - 42), (640, ch - 12), (10, 15, 24), -1)
+        cv2.rectangle(canvas, (20, ch - 42), (640, ch - 12), (0, 215, 255), 1)
+        cv2.putText(canvas, hud_compass, (28, ch - 22), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (0, 215, 255), 1, cv2.LINE_AA)
 
         return canvas
 
@@ -907,40 +937,65 @@ class VLMClassroomDashboardV3(QMainWindow):
 
         if is_fl_on and power > 0.0:
             if not is_countering:
-                # 未相消态 (140W 常规照明)
+                # 未相消态 (140W 常规照明): 12 尖角物理激光星芒衍射刺 + 致盲核心 + 失能白雾 (对比度 1:1.05)
+                # 1. 12 尖角物理激光星芒衍射刺 (Diffraction Spikes)
+                spikes_layer = np.zeros_like(canvas)
+                num_spikes = 12
+                spike_len = int(190 + (power / 5000.0) * 190)
+                for s_i in range(num_spikes):
+                    ang = (s_i * 2.0 * math.pi / num_spikes) + 0.15
+                    x2 = int(gx + spike_len * math.cos(ang))
+                    y2 = int(gy + spike_len * math.sin(ang))
+                    cv2.line(spikes_layer, (gx, gy), (x2, y2), (200, 235, 255), 3, cv2.LINE_AA)
+                    cv2.line(spikes_layer, (gx, gy), (x2, y2), (255, 255, 255), 1, cv2.LINE_AA)
+                for ang in [0, math.pi * 0.5, math.pi, math.pi * 1.5]:
+                    x2 = int(gx + int(spike_len * 1.45) * math.cos(ang))
+                    y2 = int(gy + int(spike_len * 1.45) * math.sin(ang))
+                    cv2.line(spikes_layer, (gx, gy), (x2, y2), (220, 245, 255), 2, cv2.LINE_AA)
+                    cv2.line(spikes_layer, (gx, gy), (x2, y2), (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.addWeighted(spikes_layer, 0.85, canvas, 1.0, 0, canvas)
+
+                # 2. 纯白致盲过曝核心 (Blinding Core)
                 overlay = canvas.copy()
-                cv2.circle(overlay, (gx, gy), 220, (180, 230, 255), -1)
-                cv2.circle(overlay, (gx, gy), 130, (220, 245, 255), -1)
-                cv2.circle(overlay, (gx, gy), 65, (255, 255, 255), -1)
+                cv2.circle(overlay, (gx, gy), 240, (170, 220, 255), -1)
+                cv2.circle(overlay, (gx, gy), 140, (220, 245, 255), -1)
+                cv2.circle(overlay, (gx, gy), 75, (255, 255, 255), -1)
                 overlay = self.fast_pyramid_blur(overlay, 15)
-                cv2.addWeighted(overlay, 0.75, canvas, 0.25, 0, canvas)
+                cv2.addWeighted(overlay, 0.82, canvas, 0.18, 0, canvas)
 
+                # 3. 全视界失能雾化与光内散射 (Veiling Intraocular Scatter)
                 fog = canvas.copy()
-                cv2.rectangle(fog, (220, 130), (1060, 500), (240, 245, 255), -1)
+                cv2.rectangle(fog, (180, 110), (1100, 520), (245, 248, 255), -1)
                 fog = self.fast_pyramid_blur(fog, 15)
-                cv2.addWeighted(fog, 0.45, canvas, 0.55, 0, canvas)
+                cv2.addWeighted(fog, 0.55, canvas, 0.45, 0, canvas)
 
+                # 4. 对比度暴跌至 1:1.05 极度致盲标识
                 cv2.rectangle(canvas, (320, 440), (960, 490), (15, 15, 28), -1)
                 cv2.rectangle(canvas, (320, 440), (960, 490), (0, 0, 255), 2)
-                cv2.putText(canvas, '实时黑板动态对比度: 1:1.2 (严重看不清板书 | 视网膜照度过载) [未相消]', (340, 472),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 80, 255), 2, cv2.LINE_AA)
+                cv2.putText(canvas, '实时黑板动态对比度: 1:1.05 (极度致盲看不清 | 视网膜光载过荷) [未相消]', (340, 472),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 80, 255), 2, cv2.LINE_AA)
 
+                # 顶部 HUD 告警
                 cv2.rectangle(canvas, (20, 20), (1260, 82), (12, 16, 28), -1)
                 cv2.rectangle(canvas, (20, 20), (1260, 82), (0, 70, 255), 2)
-                cv2.putText(canvas, f'【受眩光学生第一人称视角 (Student POV)】 ⚠️ 强反光失能眩晕 (照度 {int(power)} Lux) | 席位: {seat_name}', (40, 50),
+                cv2.putText(canvas, f'【受眩光学生第一人称视角 (Student POV)】 ⚠️ 激光级致盲强反射 (照度 {int(power)} Lux) | 席位: {seat_name}', (40, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 70, 255), 2, cv2.LINE_AA)
-                cv2.putText(canvas, '状态: 耀眼反光完全遮盖板书 | 视界对比度暴跌至 1:1.2 | 等待天花板 220W 无影灯执行主动相消覆盖...', (40, 74),
+                cv2.putText(canvas, '状态: 12角激光星芒与视网膜散射完全遮蔽板书 | 对比度暴跌至 1:1.05 (字迹完全湮灭) | 亟需天花板无影灯相消覆盖...', (40, 74),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.48, (200, 200, 200), 1, cv2.LINE_AA)
             else:
-                # 相消态 (220W 调角 48°)
-                wash_poly = np.array([
-                    [gx - 140, 20], [gx + 140, 20],
-                    [gx + 420, 520], [gx - 420, 520]
-                ], np.int32)
-                wash_overlay = canvas.copy()
-                cv2.fillPoly(wash_overlay, [wash_poly], (255, 250, 230))
-                wash_overlay = self.fast_pyramid_blur(wash_overlay, 15)
-                cv2.addWeighted(wash_overlay, 0.28, canvas, 0.72, 0, canvas)
+                # 相消态 (220W 调角 48°): 4 路天花板定向体积光幕倾泻覆盖 + 激光星芒彻底熄灭
+                beam_layer = np.zeros_like(canvas)
+                fx_centers = [int(cw * 0.22), int(cw * 0.40), int(cw * 0.60), int(cw * 0.78)]
+                for fcx in fx_centers:
+                    poly = np.array([
+                        [fcx - 45, 22],
+                        [fcx + 45, 22],
+                        [fcx + 180, 520],
+                        [fcx - 180, 520]
+                    ], np.int32)
+                    cv2.fillPoly(beam_layer, [poly], (255, 250, 230))
+                beam_layer = self.fast_pyramid_blur(beam_layer, 15)
+                cv2.addWeighted(beam_layer, 0.32, canvas, 0.68, 0, canvas)
 
                 diff_overlay = canvas.copy()
                 cv2.circle(diff_overlay, (gx, gy), 60, (230, 245, 255), -1)
