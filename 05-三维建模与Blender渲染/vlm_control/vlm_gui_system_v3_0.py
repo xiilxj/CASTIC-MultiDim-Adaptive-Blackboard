@@ -544,8 +544,8 @@ class VLMClassroomDashboardV3(QMainWindow):
                 except Exception:
                     pass
 
-        # 预计算 1280x720 视线投射网格 (80° FOV)
-        self.pano_ray_dir = self.precompute_ray_grid(1280, 720, 80.0)
+        # 预计算 1280x720 视线投射网格 (105° 黄金广角全景环视)
+        self.pano_ray_dir = self.precompute_ray_grid(1280, 720, 105.0)
         self.pano_cache_key = None
         self.pano_cache_img = None
 
@@ -572,8 +572,7 @@ class VLMClassroomDashboardV3(QMainWindow):
         return self.flashlight_power
 
     @staticmethod
-    @staticmethod
-    def precompute_ray_grid(out_w=1280, out_h=720, fov_deg=80.0):
+    def precompute_ray_grid(out_w=1280, out_h=720, fov_deg=105.0):
         fov_rad = np.radians(fov_deg)
         f = 0.5 * out_w / np.tan(fov_rad / 2.0)
         u = np.arange(out_w, dtype=np.float32)
@@ -719,8 +718,9 @@ class VLMClassroomDashboardV3(QMainWindow):
                     curr_pos = event.pos()
                     dx = curr_pos.x() - self.cam_drag_start.x()
                     dy = curr_pos.y() - self.cam_drag_start.y()
-                    self.cam_yaw = float(np.clip(getattr(self, "cam_yaw", 0.0) + dx * 0.32, -180.0, 180.0))
-                    self.cam_pitch = float(np.clip(getattr(self, "cam_pitch", 0.0) - dy * 0.25, -70.0, 70.0))
+                    new_yaw = getattr(self, "cam_yaw", 0.0) + dx * 0.28
+                    self.cam_yaw = float((new_yaw + 180.0) % 360.0 - 180.0)
+                    self.cam_pitch = float(np.clip(getattr(self, "cam_pitch", 0.0) - dy * 0.22, -75.0, 75.0))
                     self.cam_drag_start = curr_pos
                     return True
                 elif getattr(self, "is_dragging_flashlight", False):
