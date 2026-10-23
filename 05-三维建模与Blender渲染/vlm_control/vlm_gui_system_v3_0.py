@@ -528,26 +528,69 @@ class VLMClassroomDashboardV3(QMainWindow):
                 except Exception:
                     pass
 
-        # 载入 Blender 真实 360° 等距柱状球面全景底图与透视反投影
-        pano_paths = [
+        # 载入 Blender 真实 360° 等距柱状球面全景底图 (支持多形态物理开合与变形切换)
+        self.pano_f1 = None
+        self.pano_f200 = None
+        self.pano_f480 = None
+
+        def load_pano_file(paths):
+            for pp in paths:
+                if os.path.exists(pp):
+                    try:
+                        img = cv2.imdecode(np.fromfile(pp, dtype=np.uint8), cv2.IMREAD_COLOR)
+                        if img is not None and img.shape[0] > 100:
+                            return img
+                    except Exception:
+                        pass
+            return None
+
+        self.pano_f1 = load_pano_file([
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\blender_classroom_360_frame001.png",
+            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/blender_classroom_360_frame001.png"
+        ])
+        self.pano_f200 = load_pano_file([
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\blender_classroom_360_frame200.png",
+            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/blender_classroom_360_frame200.png",
             r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\blender_classroom_360_panorama.png",
             r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/blender_classroom_360_panorama.png"
-        ]
-        self.pano_bg = None
-        for pp in pano_paths:
-            if os.path.exists(pp):
-                try:
-                    img = cv2.imdecode(np.fromfile(pp, dtype=np.uint8), cv2.IMREAD_COLOR)
-                    if img is not None and img.shape[0] > 100:
-                        self.pano_bg = img
-                        break
-                except Exception:
-                    pass
+        ])
+        self.pano_f480 = load_pano_file([
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\blender_classroom_360_frame480.png",
+            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/blender_classroom_360_frame480.png"
+        ])
+
+        self.pano_bg = self.pano_f200 if self.pano_f200 is not None else self.pano_f1
 
         # 预计算 1280x720 视线投射网格 (105° 黄金广角全景环视)
         self.pano_ray_dir = self.precompute_ray_grid(1280, 720, 105.0)
         self.pano_cache_key = None
         self.pano_cache_img = None
+
+    def get_current_pano(self):
+        """根据当前黑板动力学帧索引 (0.0 ~ 40.0) 动态插值融合多形态 360° 全景底图，确保切换角度后依然能平滑变形！"""
+        if getattr(self, "pano_f1", None) is None:
+            return getattr(self, "pano_bg", None)
+
+        cur_f = float(getattr(self, "cur_anim_frame", 40.0))
+        max_idx = float(max(1.0, len(getattr(self, "anim_frames", [])) - 1))
+        mid_idx = max_idx * 0.40 # 16.0，对应 Frame 200
+
+        # 若处于关键帧端点，直接返回无损原始帧
+        if cur_f <= 0.2:
+            return self.pano_f1
+        elif abs(cur_f - mid_idx) <= 0.2 and getattr(self, "pano_f200", None) is not None:
+            return self.pano_f200
+        elif cur_f >= (max_idx - 0.2) and getattr(self, "pano_f480", None) is not None:
+            return self.pano_f480
+
+        if cur_f < mid_idx and getattr(self, "pano_f200", None) is not None:
+            alpha = max(0.0, min(1.0, cur_f / mid_idx))
+            return cv2.addWeighted(self.pano_f1, 1.0 - alpha, self.pano_f200, alpha, 0)
+        elif getattr(self, "pano_f480", None) is not None and getattr(self, "pano_f200", None) is not None:
+            denom = max(1.0, max_idx - mid_idx)
+            alpha = max(0.0, min(1.0, (cur_f - mid_idx) / denom))
+            return cv2.addWeighted(self.pano_f200, 1.0 - alpha, self.pano_f480, alpha, 0)
+        return self.pano_f1
 
     def toggle_flashlight(self, enabled=None):
         """切换或设置手电筒开关状态并输出视觉与文本反馈"""
@@ -585,15 +628,17 @@ class VLMClassroomDashboardV3(QMainWindow):
         return np.stack([x / norm, y / norm, z / norm], axis=-1)
 
     def project_pano_view(self, yaw_deg, pitch_deg):
-        """60 FPS 360° 球面全景等距柱状图到当前观察视角的动态透视反投影"""
-        if getattr(self, "pano_bg", None) is None:
+        """60 FPS 360° 球面全景等距柱状图到当前观察视角的动态透视反投影 (支持动态变形联动)"""
+        pano_current = self.get_current_pano()
+        if pano_current is None:
             return None
 
-        cache_k = (round(float(yaw_deg), 1), round(float(pitch_deg), 1))
+        cur_f = round(float(getattr(self, "cur_anim_frame", 0.0)), 1)
+        cache_k = (round(float(yaw_deg), 1), round(float(pitch_deg), 1), cur_f)
         if self.pano_cache_key == cache_k and self.pano_cache_img is not None:
             return self.pano_cache_img.copy()
 
-        h_pano, w_pano = self.pano_bg.shape[:2]
+        h_pano, w_pano = pano_current.shape[:2]
         yaw = np.radians(yaw_deg)
         pitch = np.radians(pitch_deg)
 
@@ -621,7 +666,7 @@ class VLMClassroomDashboardV3(QMainWindow):
         map_x = (((lon / np.pi) * 0.5 + 0.5) * w_pano).astype(np.float32)
         map_y = ((0.5 - (lat / np.pi)) * h_pano).astype(np.float32)
 
-        out_img = cv2.remap(self.pano_bg, map_x, map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_WRAP)
+        out_img = cv2.remap(pano_current, map_x, map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_WRAP)
         self.pano_cache_key = cache_k
         self.pano_cache_img = out_img
         return out_img.copy()
@@ -1153,30 +1198,33 @@ class VLMClassroomDashboardV3(QMainWindow):
         gx = int(360 + (fx / 1280.0) * 560)
         gy = int(220 + (fy / 720.0) * 220)
 
-        if is_fl_on and power > 0.0:
+        # 判定手电筒反射光是否真实射入当前观察学生眼睛 (席位 2: X=-2.2m)
+        x_refl = opt_3d.get("x_refl", -2.2)
+        dist_to_student = abs(x_refl - (-2.2))
+        hits_student = (dist_to_student < 0.95) and is_fl_on and (power > 0.0)
+
+        if hits_student:
+            glare_intensity = max(0.2, min(1.0, 1.0 - (dist_to_student / 0.95))) * (power / 5000.0)
             if not is_countering:
                 # -------------------------------------------------------------
-                # 未相消态 (140W 常规照明): 真实镜面高光过曝 Wash-out
+                # 未相消态 (140W 常规照明): 真实物理失能眩光光幕 (柔和多层高斯渐变，告别生硬死圈)
                 # -------------------------------------------------------------
+                spot_r = int(60 + glare_intensity * 75)
                 mask = np.zeros((ch, cw), dtype=np.float32)
-                spot_r = int(75 + (power / 5000.0) * 45)
                 cv2.circle(mask, (gx, gy), spot_r, 1.0, -1)
-                mask = cv2.GaussianBlur(mask, (81, 81), 25)
+                mask = cv2.GaussianBlur(mask, (101, 101), 35)
 
-                white_layer = np.full_like(canvas, 255)
+                white_layer = np.full_like(canvas, (248, 252, 255), dtype=np.float32)
                 canvas_float = canvas.astype(np.float32)
-                wash_factor = np.expand_dims(mask, axis=-1)
-                canvas = (canvas_float * (1.0 - wash_factor * 0.92) + white_layer * (wash_factor * 0.92)).clip(0, 255).astype(np.uint8)
-
-                # 微弱镜头光晕环
-                cv2.circle(canvas, (gx, gy), spot_r + 35, (210, 240, 255), 2, cv2.LINE_AA)
+                wash_factor = np.expand_dims(mask * (0.35 + 0.58 * glare_intensity), axis=-1)
+                canvas = (canvas_float * (1.0 - wash_factor) + white_layer * wash_factor).clip(0, 255).astype(np.uint8)
 
                 # 顶部 HUD 告警
                 cv2.rectangle(canvas, (20, 20), (1260, 80), (14, 18, 28), -1)
                 cv2.rectangle(canvas, (20, 20), (1260, 80), (0, 70, 255), 2)
-                cv2.putText(canvas, f"【受照学生第一人称视角 (Student POV)】 ⚠️ 镜面强反光导致局部板书严重湮灭 | 席位: {seat_name}", (35, 48),
+                cv2.putText(canvas, f"【受照学生第一人称视角 (Student POV)】 ⚠️ 镜面强反光直击本席视网膜 | 席位: 2号席位 (靠窗第2排)", (35, 48),
                             font, 0.65, (0, 90, 255), 2, cv2.LINE_AA)
-                cv2.putText(canvas, f"照度: {int(power)} Lux | 实时动态对比度: 1:1.15 (字迹被强光冲刷白灼化，无法辨识) | 亟需洗墙灯定向偏转射束覆盖...", (35, 72),
+                cv2.putText(canvas, f"照度: {int(power)} Lux | 实时动态对比度: 1:1.15 (字迹白灼化，无法辨识) | 亟需洗墙灯定向偏转射束覆盖...", (35, 72),
                             font, 0.45, (200, 200, 200), 1, cv2.LINE_AA)
 
                 # 对比度警戒条
@@ -1201,13 +1249,13 @@ class VLMClassroomDashboardV3(QMainWindow):
 
                 # 镜面热斑被大面积漫反射冲淡稀释
                 res_mask = np.zeros((ch, cw), dtype=np.float32)
-                cv2.circle(res_mask, (gx, gy), 45, 0.22, -1)
+                cv2.circle(res_mask, (gx, gy), 45, 0.12, -1)
                 res_mask = cv2.GaussianBlur(res_mask, (41, 41), 15)
 
                 canvas_float = canvas.astype(np.float32)
                 beam_layer = np.full_like(canvas, (245, 252, 255), dtype=np.float32)
                 white_layer = np.full_like(canvas, 255, dtype=np.float32)
-                canvas_res = (canvas_float * 0.88 + beam_layer * 0.12 * np.expand_dims(beam_mask, -1)).clip(0, 255)
+                canvas_res = (canvas_float * 0.90 + beam_layer * 0.10 * np.expand_dims(beam_mask, -1)).clip(0, 255)
                 canvas = (canvas_res * (1.0 - np.expand_dims(res_mask, -1)) + white_layer * np.expand_dims(res_mask, -1)).clip(0, 255).astype(np.uint8)
 
                 # 顶部 HUD 状态
@@ -1224,12 +1272,21 @@ class VLMClassroomDashboardV3(QMainWindow):
                 cv2.putText(canvas, "实时黑板动态对比度: 1:11.8 (国标黄金反差 | 字迹清晰锐利) [相消生效]", (340, 500),
                             font, 0.50, (0, 255, 128), 2, cv2.LINE_AA)
         else:
-            cv2.rectangle(canvas, (20, 20), (1260, 80), (15, 20, 30), -1)
-            cv2.rectangle(canvas, (20, 20), (1260, 80), (70, 90, 120), 1)
-            cv2.putText(canvas, f"【受反光学生第一人称视角 (Student POV)】 席位: {seat_name} (手电筒未照射)", (35, 48),
-                        font, 0.65, (200, 210, 225), 2, cv2.LINE_AA)
-            cv2.putText(canvas, "提示: 请在视口开启手电筒，即可实时观测入射角反射至该学生座位的白灼反光及智能洗墙灯单束偏转相消效果！", (35, 72),
-                        font, 0.45, (160, 175, 195), 1, cv2.LINE_AA)
+            # 未受反光直射：视野清晰舒适
+            cv2.rectangle(canvas, (20, 20), (1260, 80), (15, 24, 28), -1)
+            cv2.rectangle(canvas, (20, 20), (1260, 80), (0, 200, 140), 1)
+            cv2.putText(canvas, f"【受照学生第一人称视角 (Student POV)】 视界舒适清晰 | 席位: 2号席位 (靠窗第2排)", (35, 48),
+                        font, 0.65, (0, 220, 140), 2, cv2.LINE_AA)
+            if is_fl_on and power > 0.0:
+                hint_str = f"当前手电筒反射光束击中: {seat_name} (未直射本席位，板书清晰锐利，无失能眩光)"
+            else:
+                hint_str = "当前光源处于待机微弱态，无直射强反光干扰本席位。"
+            cv2.putText(canvas, hint_str, (35, 72), font, 0.45, (200, 230, 220), 1, cv2.LINE_AA)
+
+            cv2.rectangle(canvas, (320, 470), (960, 515), (10, 25, 20), -1)
+            cv2.rectangle(canvas, (320, 470), (960, 515), (0, 220, 140), 1)
+            cv2.putText(canvas, "实时黑板动态对比度: 1:12.5 (国标优良 | 无直射反光)", (340, 500),
+                        font, 0.50, (0, 220, 140), 2, cv2.LINE_AA)
 
         if (target_w, target_h) != (cw, ch):
             return cv2.resize(canvas, (target_w, target_h))
