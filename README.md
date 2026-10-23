@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/OS-Linux-FCC624.svg?style=flat-square&logo=linux" alt="Linux" />
   <img src="https://img.shields.io/badge/Multimodal-Google%20Gemini-8E75C2.svg?style=flat-square&logo=google" alt="Google Gemini" />
   <img src="https://img.shields.io/badge/Framework-Antigravity%20Agent-00C853.svg?style=flat-square" alt="Antigravity" />
-  <img src="https://img.shields.io/badge/LLM-Meta%20Llama%203-0468FF.svg?style=flat-square&logo=meta" alt="Llama" />
+  <img src="https://img.shields.io/badge/Inference-llama.cpp%20GGUF-0468FF.svg?style=flat-square" alt="llama.cpp" />
   <!-- 工程与渲染工具链徽章 -->
   <img src="https://img.shields.io/badge/Blender-5.0.1%20Cycles%20GPU-E87D0D.svg?style=flat-square&logo=blender" alt="Blender 5.0" />
   <img src="https://img.shields.io/badge/AutoCAD-2026%20COM%20Automation-red.svg?style=flat-square&logo=autodesk" alt="AutoCAD 2026" />
@@ -26,7 +26,7 @@
 </p>
 
 > 🏷️ **GitHub 项目开源分类与技术标签 (Topic Tags)**:  
-> `matlab2025b` · `arch linux` · `linux` · `Gemini` · `Antigravity` · `llama` · `blender5` · `autocad2026` · `digital-twin` · `castic-2026` · `ergonomics` · `qwen-vl` · `edge-ai`
+> `matlab2025b` · `arch linux` · `linux` · `Gemini` · `Antigravity` · `llama` · `llama.cpp` · `blender5` · `autocad2026` · `digital-twin` · `castic-2026` · `ergonomics` · `qwen-vl` · `edge-ai`
 
 ---
 
@@ -37,7 +37,7 @@
 2. **大尺寸交互屏幕与大面积物理板书不可兼得**：市面传统推拉黑板在露显 86 寸中置屏幕时，有效书写面积折损过半；若完全封闭大屏，则无法进行信息化多媒体协同；
 3. **粉笔灰堆积与滑道卡阻**：长期粉笔灰沉降堵塞下部机械滑道，形成“活塞卡阻”，导致推拉沉重受阻、结构易磨损损坏。
 
-针对上述难题，本项目历经四代严苛的机械与光学演化：**S 系列（单偏心铰链）** ➔ **Z 系列（对角线双铰链两折叠并成）** ➔ **VI 系列（三维空间逆向光路追溯避光）** ➔ **VLMC 系列（GH-VI-2026 大模型多模态智能相消与数字孪生闭环）**，最终形成了集**“对角线双铰链空间正交解耦机构”**、**“MATLAB 2025b 物理光学相消”**与**“端侧多模态大模型 (Gemini / Antigravity / Llama / Qwen2.5-VL) 活体数字孪生闭环”**于一体的全新解决方案。
+针对上述难题，本项目历经四代严苛的机械与光学演化：**S 系列（单偏心铰链）** ➔ **Z 系列（对角线双铰链两折叠并成）** ➔ **VI 系列（三维空间逆向光路追溯避光）** ➔ **VLMC 系列（GH-VI-2026 大模型多模态智能相消与数字孪生闭环）**，最终形成了集**“对角线双铰链空间正交解耦机构”**、**“MATLAB 2025b 物理光学相消”**与**“端侧多模态大模型与 llama.cpp 本地端侧推理 (Gemini / Antigravity / llama.cpp / Qwen2.5-VL) 活体数字孪生闭环”**于一体的全新解决方案。
 
 ```
 【第一代 S系列 (单铰链)】    【第二代 Z系列 (对角双铰链)】    【第三代 VI系列 (三维空间避光)】    【第四代 VLMC系列 (GH-VI-2026旗舰)】
@@ -84,8 +84,8 @@
    - 融合真实 CAM 1 (DJI Osmo / 广角相机) 学生面部特征点与 3D 虚拟光源手电筒交互输入流。
 2. **阶段二 · 四代机构拓扑演进 (S ➔ Z ➔ VI ➔ VLMC, 8000mm)**：
    - 从 S 系列单偏心铰链，到 Z 系列对角双铰链折叠，到 VI 系列三维空间避光，最终演化为 VLMC 8000mm 极限大一统系统。
-3. **阶段三 · 多模态 AI 认知大脑与大模型矩阵 (Arch Linux, Gemini, Antigravity, Llama, Qwen2.5-VL)**：
-   - 构建高性能端侧系统底座，协同调度云端时空大模型与边缘开源大模型，毫秒级输出 Tool Calling 结构化控制指令。
+3. **阶段三 · 多模态 AI 认知大脑与大模型矩阵 (Arch Linux, Gemini, Antigravity, llama.cpp, Qwen2.5-VL)**：
+   - 构建高性能端侧系统底座，协同调度云端时空大模型与边缘本地高性能推理引擎，毫秒级输出 Tool Calling 结构化控制指令。
 4. **阶段四 · MATLAB 2025b 物理光学仿真与自适应相消算子**：
    - 依托 MATLAB 2025b 蒙特卡洛 10,000 条光线追踪与 Fresnel 菲涅尔高程反射模型，反算 4 组自适应洗墙灯定向偏转角（Pan/Tilt）与相消功率。
 5. **阶段五 · 360° 自由拖拽数字孪生、8 席位学生视网膜人因视界与 1:10 拓竹样机验证**：
@@ -106,7 +106,7 @@
                        │                                             │
                        └──────────────────────┬──────────────────────┘
                                               │
-                   [端侧开源大模型: Meta Llama 3 / Qwen2.5-VL]
+                   [端侧开源大模型: llama.cpp GGUF / Qwen2.5-VL]
                       - 纯离线安全部署于 Arch Linux / Linux 生产基座
                       - 视觉语言实时因果解释与结构化 Tool Calling 输出:
                         >>> api_adjust_blackboard(mode=3, yaw=18.0, span=8000)
@@ -124,7 +124,7 @@
   全生命周期智能体编排中枢，负责多任务上下文隔离、动态调试、MCP 协议总线分发以及连续 75 轮严苛闭环验证，确保系统零拒绝、高鲁棒性。
 - **Google Gemini 多模态长视域分析**：
   发挥其超强多模态理解力，解析长达数小时的教室环境延时摄影数据，评估不同季节、天气下太阳高度角变化对教室 48 席位造成的深层光斑转移机理。
-- **Meta Llama 3 边缘离线策略模型**：
+- **llama.cpp 本地端侧高性能推理引擎 (Edge GGUF Runtime)**：
   轻量级开源大语言模型，离线部署于教室边缘控制器，负责将高级策略解析为低级机构状态机逻辑。
 - **Qwen2.5-VL 端侧实时视觉语言推理**：
   并行处理真实摄像头面部帧与虚拟黑板反光帧，以 60 FPS 频率实时生成结构化工具调用（Tool Call），驱动硬件执行机构。

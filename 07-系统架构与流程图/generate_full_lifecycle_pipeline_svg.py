@@ -79,7 +79,7 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" 
       <text x="567" y="19" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">Antigravity</text>
 
       <rect x="641" y="0" width="118" height="28" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.8" />
-      <text x="700" y="19" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">Meta llama</text>
+      <text x="700" y="19" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">llama.cpp</text>
 
       <rect x="769" y="0" width="135" height="28" rx="4" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
       <text x="836" y="19" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="900" fill="#000000" text-anchor="middle">Qwen2.5-VL</text>
@@ -338,17 +338,17 @@ svg_content = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" 
     <g transform="translate(18, 545)">
       <rect x="0" y="0" width="439" height="245" rx="6" fill="#ffffff" stroke="#000000" stroke-width="1.8" />
       <rect x="12" y="12" width="175" height="26" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
-      <text x="99" y="30" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">Gemini ⟷ Meta llama</text>
+      <text x="99" y="30" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">Gemini ⟷ llama.cpp</text>
       <text x="199" y="31" font-family="'PingFang SC', sans-serif" font-size="14" font-weight="900" fill="#000000">云端长视域与边缘本地协同推理</text>
 
       <g transform="translate(12, 50)" font-family="'PingFang SC', sans-serif" font-size="12" fill="#000000">
         <text x="0" y="18" font-weight="bold">🧠 Google Gemini 多模态全局空间因果研判:</text>
         <text x="10" y="38">· 2M+ 超长上下文理解全天候教室光环境时空转移拓扑</text>
         <text x="10" y="58">· 评估太阳高度角变化与多学生席位遮蔽的最优策略解</text>
-        <text x="0" y="84" font-weight="bold">🦙 Meta Llama 3 边缘端本地轻量大模型分发:</text>
+        <text x="0" y="84" font-weight="bold">🦙 llama.cpp 本地端侧高性能轻量推理引擎:</text>
         <text x="10" y="104">· 本地化纯离线安全部署，无需外网依赖，极速响应</text>
         <text x="10" y="124">· 将高级语义策略解析为低级机构动作状态机</text>
-        <text x="10" y="144" font-weight="900">· 双脑协同: Gemini 负责宏观因果研判，Llama 负责微观实时分发</text>
+        <text x="10" y="144" font-weight="900">· 双脑协同: Gemini 负责宏观因果研判，llama.cpp 负责本地毫秒级推理分发</text>
       </g>
     </g>
 
@@ -590,15 +590,18 @@ with open(SVG_WHITE_PATH, "w", encoding="utf-8") as f:
 print(f"[OK] SVG generated at: {SVG_PATH}")
 print(f"[OK] SVG white copy at: {SVG_WHITE_PATH}")
 
-# 调用 rsvg-convert 编译为黑白高清矢量 PDF
-try:
-    cmd = ["rsvg-convert", "-f", "pdf", "-o", PDF_PATH, SVG_PATH]
-    res = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    print(f"[OK] PDF compiled successfully at: {PDF_PATH}")
-    
-    # 同步复制到汇报目录
-    cmd_cp = ["cp", PDF_PATH, REPORT_PDF_PATH]
-    subprocess.run(cmd_cp, check=True)
-    print(f"[OK] Report PDF copied to: {REPORT_PDF_PATH}")
-except Exception as e:
-    print(f"[ERROR] Failed to compile PDF: {e}")
+# 调用 rsvg-convert 编译为黑白高清矢量 PDF (带文件锁自动重试与版本容错)
+target_pdfs = [
+    PDF_PATH,
+    os.path.join(SCRIPT_DIR, "GH-VI-2026_Full_Lifecycle_Pipeline_v2.pdf"),
+    REPORT_PDF_PATH,
+    os.path.join(SCRIPT_DIR, "..", "04-汇报与交付报告", "GH-VI-2026_全生命周期流程图_最新版.pdf")
+]
+
+for p in target_pdfs:
+    try:
+        cmd = ["rsvg-convert", "-f", "pdf", "-o", p, SVG_PATH]
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        print(f"[OK] PDF compiled successfully at: {p}")
+    except Exception as e:
+        print(f"[SKIP/LOCKED] Could not write {os.path.basename(p)} (may be opened in WPS): {e}")
