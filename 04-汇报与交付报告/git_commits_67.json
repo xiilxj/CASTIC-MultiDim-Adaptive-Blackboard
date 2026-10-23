@@ -1,0 +1,471 @@
+[
+  {
+    "short": "6a69b2a",
+    "hash": "6a69b2aac335686b7d1344816db2e4d569c86d53",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "feat(gen1): 第一代翻转式多媒体黑板机构参数与工程图纸建立 (Review Round 7)"
+  },
+  {
+    "short": "9c2eedd",
+    "hash": "9c2eedd557f367235779da7f65eba1ea29b85034",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "feat(gen2): 第二代三维空间联动自洁防眩光黑板系统与3D动力学模型 (Review Round 8-9)"
+  },
+  {
+    "short": "dc0a561",
+    "hash": "dc0a5612acb5d76c7f5d1081e5753402ab59c721",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "feat(gen3-v1.0): 第三代多维叠合翻转全覆盖构型创新与三大工况大一统 (Review Round 10)"
+  },
+  {
+    "short": "6055beb",
+    "hash": "6055beb2e1995ce6109dfbabdbbc043ad72eaf18",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "fix(gen3-v1.1): 拓扑修正与防颤闭环：内侧铰链归位、补齐双横梁伸缩套杆与垂直拉杆 (Review Round 11)"
+  },
+  {
+    "short": "e444007",
+    "hash": "e444007931a1723519932be6b343e756ac42fdd2",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "feat(gen3-v1.2): 实现对角线双铰链空间正交解耦与右上角A-A俯视详图重构 (Review Round 12)"
+  },
+  {
+    "short": "337741d",
+    "hash": "337741ddc76a1a03325b7906d778a52285106332",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "docs(report): 首版多维教学黑板系统架构演进与交付报告编制 (Review Round 13)"
+  },
+  {
+    "short": "635001c",
+    "hash": "635001cee9c01fb69826108f9e87e652df512792",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "refactor(report-v1.0): 确立VLM赋能光环境新题头、规范第一阶段技术测验属性并去除非正式署名 (Review Round 14)"
+  },
+  {
+    "short": "3b737a5",
+    "hash": "3b737a55a5ffdd90957f02ed95853a9f9eac6187",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "docs(review): 入库国赛评审专家视角深度评估与答辩攻防备忘录 (Review Round 15)"
+  },
+  {
+    "short": "b887686",
+    "hash": "b8876864ab0c20cf3a50b21401a845b56ca7ed48",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "docs(castic): 针对高中生CASTIC全国青少年科技创新大赛定制三自原则自证与问辩攻略 (Review Round 16)"
+  },
+  {
+    "short": "0f48ba5",
+    "hash": "0f48ba568ff8af7b4cdae1bf274ef211214218fd",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "docs(log): 更新第17轮技术审核日志并同步至GitHub公开存证仓库"
+  },
+  {
+    "short": "ee7cdf9",
+    "hash": "ee7cdf933489de7799c83dde3d427c5ce56f025a",
+    "date": "2026-09-12",
+    "author": "xiilxj",
+    "subject": "docs(toolchain): 入库基于开源cad-mcp的WSL与WindowsAutoCAD跨环境Agent智能制图架构报告 (Review Round 18)"
+  },
+  {
+    "short": "4cb2ac5",
+    "hash": "4cb2ac5d49d5eecf530de1b4e4af11fc6c241ec2",
+    "date": "2026-09-24",
+    "author": "xiilxj",
+    "subject": "feat(gen3-blender): 第三代多维智能黑板Blender三维参数化建模与多工况4K光环境渲染全量交付 (Review Round 19)"
+  },
+  {
+    "short": "0732fe6",
+    "hash": "0732fe6814d927d6ecaf8717afe8599a352d9f88",
+    "date": "2026-09-24",
+    "author": "xiilxj",
+    "subject": "fix(identity): 校准项目负责人学段为现高一初三构思、固化长期记忆并封存首版3D模型待命 (Review Round 20)"
+  },
+  {
+    "short": "77612c8",
+    "hash": "77612c858e56108cf2df95cf05331e197071ec94",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(castic): 提交第三代多维叠合翻转智能黑板三维建模总装工程、S系列、Z系列与VI系列动画设计母本 [第24轮工程技术审核]"
+  },
+  {
+    "short": "3d8fcda",
+    "hash": "3d8fcda3db54c69c85a04f1f707b17994b80ba19",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(vi): 提交第三代VI系列动画母本vi1.blend与关键帧动力学开发记录 [第24轮工程技术审核]"
+  },
+  {
+    "short": "dfa50b7",
+    "hash": "dfa50b7da71f2fc5c99f4f51276e4c89aa70e9b1",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(vlm): 增加基于VLM多模态大模型控制Blender控件架构方案与VI系列控制桥接中枢代码 [第24轮工程技术审核]"
+  },
+  {
+    "short": "af92f06",
+    "hash": "af92f0652ea030ea55089c0ff3c2cdec16efdf90",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "fix(vi2): 彻底修复杆件外露缺陷并完成阶段二180度完整翻转动画母本vi2.blend [第25轮工程技术审核]"
+  },
+  {
+    "short": "0b5d97f",
+    "hash": "0b5d97f68016b0151f9afa6e894d4a1bd51874c6",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "fix(vi3): 修复折叠板向内翻转回填空缺并增加正反C型端头限位卡槽vi3.blend [第26轮工程技术审核]"
+  },
+  {
+    "short": "e01f0a6",
+    "hash": "e01f0a638cedc62c0e8e4047d7c9286bddc7df8f",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "fix(vi4): 彻底校正折叠板正前方翻折轨迹杜绝穿墙并完善C型限位卡槽vi4.blend [第27轮工程技术审核]"
+  },
+  {
+    "short": "7003653",
+    "hash": "700365396aced042e9d15b21e9250a9ee53bc052",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "fix(vi5): 校正内侧粗框架至X=±1.0m并彻底消除视口所有杂乱对角虚线vi5.blend [第28轮工程技术审核]"
+  },
+  {
+    "short": "1e53587",
+    "hash": "1e53587be97d280c6cb1a00ac2b852be0a86295e",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(vi-series): 完成VI7母本构建并通过用户动力学检验，大立柱中央对碰闭环，更新开发记录与第30轮审核"
+  },
+  {
+    "short": "aeda77a",
+    "hash": "aeda77a6013b8699a8ed1007da5a0061c112d034",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(vlm): complete round 31 review with edge VLM selection report, digital twin optical simulation blend, 45-seat Pareto optimizer, and 3-camera preview renders"
+  },
+  {
+    "short": "6d7b709",
+    "hash": "6d7b70924472905f8d6e892e904a4c65aab71a70",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(vlm): complete round 32 review with small edge VLM matrix, 8x6 48-seat advanced classroom, penetrating Tyndall volumetric lighting, and coaxial high-energy laser beams"
+  },
+  {
+    "short": "bc67121",
+    "hash": "bc671213bc5170c2ed1e450b11d09b45e3e87cdf",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(vlm): add automated Qwen2.5-VL pipeline with multi-backend sniffing and Pareto actuator dispatch"
+  },
+  {
+    "short": "e3fb14b",
+    "hash": "e3fb14b71084dd39f7ba00c228b55a3638fc3fe8",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(hud): complete round 34 review with standalone multi-camera EAR squint detector, live Blender sync, and 1280x720 decision dashboard HUD"
+  },
+  {
+    "short": "db8deed",
+    "hash": "db8deed0ad0a3ff253d0c5ab55758659e4717ffe",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(live-vr): complete round 35 review with live Blender viewport 60FPS addon, interactive natural language operator with tool calling feed, and 1-click launcher batch"
+  },
+  {
+    "short": "fc721ce",
+    "hash": "fc721ceca685235ed368729c7127aa106c7db661",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "fix(launcher): resolve Windows CMD encoding crash by adding __main__.py, robust run_live_system.py, and pure ASCII safe batch launchers"
+  },
+  {
+    "short": "abc2214",
+    "hash": "abc22144ce5a6de71ec81c15d8a6a9e2e679e4de",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "fix(vlm): 修复Blender 5.0定时器API并部署Windows双规批处理启动脚本(第36轮)"
+  },
+  {
+    "short": "caca317",
+    "hash": "caca317c1d04c161857244199eeb4360e3e20d79",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "fix(launcher): 彻底修复Windows批处理解析异常、OpenCV5兼容性与多版本Python调度(第37轮)"
+  },
+  {
+    "short": "2bc5a29",
+    "hash": "2bc5a29085ea84ebfc3bef526ab4e0fead6124ac",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "docs(review): 更新VI系列开发记录至第37轮工程技术审核"
+  },
+  {
+    "short": "e1a97df",
+    "hash": "e1a97df2e1fdb33f06ea91c9a67af0a042ced281",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "feat(viewport): 增加3D视口强制重绘标签(tag_redraw)确保双手脱离鼠标下60FPS实时物理驱动(第38轮)"
+  },
+  {
+    "short": "7e21e45",
+    "hash": "7e21e45155828debde23e2b1bec7104cad43cd3f",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "docs(review): 完成第39轮技术审核封板，记录写实感痛点分析与明日攻坚路线图"
+  },
+  {
+    "short": "4e489fd",
+    "hash": "4e489fd84e2d7d824d8c8b85e70cba6367b27936",
+    "date": "2026-10-03",
+    "author": "xiilxj",
+    "subject": "docs(deliverable): 重构专业README、沉淀全套Plan矢量SVG图库并编译导出今日交付报告PDF(第40轮)"
+  },
+  {
+    "short": "8bcaeda",
+    "hash": "8bcaedaa39f9549195c6423688e6c6e01a3fe679",
+    "date": "2026-10-17",
+    "author": "xiilxj",
+    "subject": "feat(exhibition-board): 完成第42届瑞安市青创赛答辩展板全要素重构，更新林诚俊(浙江省塘下中学)学籍认证并生成900x1200mm印刷级Master PDF与高清效果图"
+  },
+  {
+    "short": "6df7fe0",
+    "hash": "6df7fe0c9adb04045fe142bdc8e45179476ef417",
+    "date": "2026-10-17",
+    "author": "xiilxj",
+    "subject": "fix(kinematics): 彻底纠偏工况三与工况四为真实8000mm巨幕构型(中置大屏2m+固定板2m+两翼衍生板4m)，替换为vi7物理光追仿真导出图并同步更新19页全案PDF与展板Master"
+  },
+  {
+    "short": "9a84f30",
+    "hash": "9a84f30a3d2b21391fe5158b1dbc995540290122",
+    "date": "2026-10-17",
+    "author": "xiilxj",
+    "subject": "docs: 移除作品介绍中的附录三(说明书附图)，目录与正文同步对齐至17页精简封板版"
+  },
+  {
+    "short": "fa5a25e",
+    "hash": "fa5a25eb0aedd465b9b54c7a5709e2b4d93307da",
+    "date": "2026-10-17",
+    "author": "xiilxj",
+    "subject": "fix(board): 彻底纠偏答辩展板第三区hero卡片为vi7高清图与8000mm规格，超分增强至4K印刷级"
+  },
+  {
+    "short": "ecb2f39",
+    "hash": "ecb2f39b2720ac88b6e36ba91cb3d19bc26d0ac1",
+    "date": "2026-10-17",
+    "author": "xiilxj",
+    "subject": "fix(board): 彻底统一展板为8000mm极限展开巨幕，消除时序图与卡片尺寸矛盾，规范典型避光角4.5°与机构极限15°，彻底剔除折射错词"
+  },
+  {
+    "short": "d21936f",
+    "hash": "d21936f45aea875987ececbeea134134dc82da13",
+    "date": "2026-10-17",
+    "author": "xiilxj",
+    "subject": "feat(cad): 重构第三代总装蓝图工况三为8000mm真实物理拓扑并提升4K出图精度 (第53轮审定)"
+  },
+  {
+    "short": "cb6997c",
+    "hash": "cb6997cb69a8e01da01de2fe49e89850d6b345d5",
+    "date": "2026-10-21",
+    "author": "xiilxj",
+    "subject": "feat(vlm): 新增独立v2.0多模态VLM教室光环境主控系统，集成MiniCPM-V/InternVL与双通道摄像头切换 (第55轮审定)"
+  },
+  {
+    "short": "934a4b2",
+    "hash": "934a4b25d41369a47ab1b111dfba1861205e9cce",
+    "date": "2026-10-21",
+    "author": "xiilxj",
+    "subject": "feat(vlm): 升级Qwen2.5-VL视觉大模型、实现双视角画中画切换并新增健壮无乱码bat启动器 (第56轮审定)"
+  },
+  {
+    "short": "4477a83",
+    "hash": "4477a837ac3c30f82f7f62b588f86cddc1860400",
+    "date": "2026-10-21",
+    "author": "xiilxj",
+    "subject": "feat(vlm): 完善 VLM 光环境交互系统 v2.0，修复 Windows 批处理 GBK 编码与路径截断，支持 USB 运动相机与双视口画中画切换"
+  },
+  {
+    "short": "f6cdfe7",
+    "hash": "f6cdfe78deb45aaa4a9ba9bab638ae5ae62dab89",
+    "date": "2026-10-21",
+    "author": "xiilxj",
+    "subject": "fix(launcher): 优先锁定稳定版 Python 3.10 运行时，彻底解决 Python 3.14 下 NumPy C-extension DLL 缺失报错"
+  },
+  {
+    "short": "99103b3",
+    "hash": "99103b3d6562526327853a680175cc540bf40fa7",
+    "date": "2026-10-21",
+    "author": "xiilxj",
+    "subject": "feat(interaction): 彻底打通 VLM 中文打字交互(弹窗/终端/键盘三通道)、增强相机深度扫描与热重扫机制(支持运动相机直切)"
+  },
+  {
+    "short": "0e52fd6",
+    "hash": "0e52fd6fa46592cba577cbcd08fafb91217871be",
+    "date": "2026-10-21",
+    "author": "xiilxj",
+    "subject": "fix(launcher): 彻底消除控制台 Emoji 字符集崩溃与批处理管道符 syntax error，通过 Windows-MCP 实机验证通过"
+  },
+  {
+    "short": "10f8e10",
+    "hash": "10f8e10f5e5b6ae1ffaa0ebc38baccbc0fba89f6",
+    "date": "2026-10-21",
+    "author": "xiilxj",
+    "subject": "feat(v3): 全新 PyQt5 现代暗黑客户端上线，支持原生中文直接打字、DJI Action 5 Pro 自动锁定、算法双模切换与 Blender 无影灯式主动相消光环境"
+  },
+  {
+    "short": "7b0af02",
+    "hash": "7b0af0280fe0b66c3c853f64d4398d1f7fa81f2c",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "feat(vlm): integrate autonomous perception heartbeat and streaming token typing for Qwen2.5-VL v3.0"
+  },
+  {
+    "short": "729d8e5",
+    "hash": "729d8e5556a43205f9b91739faab4a6e1a093cdc",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "fix(vlm): upgrade multimodal causal engine with semantic intent parsing and dynamic optical physics derivation"
+  },
+  {
+    "short": "222b37e",
+    "hash": "222b37e6a32ea15262b1ae3702329b67afe0657f",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "feat(vlm): support natural greeting, prompt intent analysis, and local llama-server probe"
+  },
+  {
+    "short": "c74b470",
+    "hash": "c74b4706ee104feedf01fbc5d4c25fe9644a80ac",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "fix(vlm): prioritize user prompt intent over background glare metrics"
+  },
+  {
+    "short": "fb8910f",
+    "hash": "fb8910f6f376ab4bc37f14ee5b42c66e90aceb43",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "feat(vlm): upgrade vision query response to natural language and capture raw frame for base64 encoding"
+  },
+  {
+    "short": "e5df3e8",
+    "hash": "e5df3e8d66c7c8f5e3f6a9adb61706e7fe8dc7d5",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "feat(vlm): complete real Qwen2.5-VL deployment, image base64 pipeline and llama-server integration"
+  },
+  {
+    "short": "b44e5e7",
+    "hash": "b44e5e78359120dcf1358fab6c497320eebe9f25",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "fix(vlm): upgrade resolution to 640x360 with edge telemetry prior and decouple lighting boilerplate"
+  },
+  {
+    "short": "21acc9a",
+    "hash": "21acc9a56cf0912f41cdf67c183259d62226bbb0",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "feat(vlm): implement 60fps 3d dynamic perspective blackboard engine with telescopic linkage motion and blender digital twin bridge"
+  },
+  {
+    "short": "082b230",
+    "hash": "082b230b0712f8e9106495daae88b314c2b3c006",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "feat(vlm): implement multi-target head tracking bounding boxes and facial landmark hud annotation using yunet neural detector"
+  },
+  {
+    "short": "cbd8582",
+    "hash": "cbd8582078871559c2070e137c23459eaa5eeba8",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "feat(vlm-control): 彻底解决回复问号乱码与高频刷屏，实现Blender 5.0 原生8000mm极限展开态(Frame 480)与实时投屏联动"
+  },
+  {
+    "short": "426b028",
+    "hash": "426b0286b562bdab6d61cc5a8301142f1a23bbac",
+    "date": "2026-10-22",
+    "author": "xiilxj",
+    "subject": "feat(vlm): 实装三维光线追踪、受反光学生第一人称眩晕相消视图与非阻塞背压优化 (Round 72)"
+  },
+  {
+    "short": "9f34e08",
+    "hash": "9f34e08e027eecb41d00a74c336d7313948cda6a",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "feat(vlm): 修复启动器报错并实装360度右键环顾全景、天花板4路洗墙光束与12角激光眩光相消 (Round 73)"
+  },
+  {
+    "short": "f16af8f",
+    "hash": "f16af8f0bb81a1844bce8712f89402ed5b1721ce",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "feat(r74): 修复启动器CRLF与槽函数异常闪退Bug，重构单灯定向偏转消眩算法，交付真360度全景漫游与CASTIC实验佐证PDF报告"
+  },
+  {
+    "short": "83a5953",
+    "hash": "83a5953cecd28a228880a342b0092fc536934d47",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "fix(pano): resolve 360 panorama local zoom distortion via Cycles equirectangular bake and native MATLAB R2025b simulation"
+  },
+  {
+    "short": "f2a8cb5",
+    "hash": "f2a8cb516e1e16e34a73a081daa973e1ee42696a",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "feat(deform-pano): support dynamic 3D blackboard deformation across all 360 angles and physical reflection gating for student POV"
+  },
+  {
+    "short": "f033787",
+    "hash": "f03378743c01c2bf53d5ab79f86373724cc7a8c6",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "fix(student-pov): eliminate baked 3D mesh glare halo from raw student POV background"
+  },
+  {
+    "short": "f3f9b1c",
+    "hash": "f3f9b1c55bc3f6ccb4362244b16b72b0d37911ed",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "feat(student-pov): add key S binding for multi-seat cycling and update PIP indicator"
+  },
+  {
+    "short": "7f6bb91",
+    "hash": "7f6bb912c95069d437474254c1a4d280f9c33fa6",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "docs: add optical student pov and multi-seat technical manual"
+  },
+  {
+    "short": "b086c5c",
+    "hash": "b086c5c01759932cdff52e4541acbd86aaeced15",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "feat(docs): add monochrome printable full lifecycle pipeline SVG/PDF and update README with required tags"
+  },
+  {
+    "short": "3b77532",
+    "hash": "3b77532068a491ccc2899572894a7492249e9f36",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "fix(docs): clarify llama tag as local llama.cpp GGUF inference engine and update white SVGs"
+  },
+  {
+    "short": "bae7c4e",
+    "hash": "bae7c4e12d0a8ee81a8e1cf36836b3f3f5137b2d",
+    "date": "2026-10-23",
+    "author": "xiilxj",
+    "subject": "docs(castic): 提交 GH-VI-2026 数字孪生交互系统研发历程全景纪实报告 (严格5页高精A4完整收官归档)"
+  }
+]
