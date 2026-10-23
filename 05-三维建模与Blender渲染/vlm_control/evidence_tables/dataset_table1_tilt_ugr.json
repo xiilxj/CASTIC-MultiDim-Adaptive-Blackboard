@@ -1,0 +1,290 @@
+[
+  {
+    "seat_id": "C1_R1",
+    "seat_name": "靠窗第1排第1列",
+    "angles": {
+      "0.0": {
+        "off_axis_deg": 77.3,
+        "lv_cd_m2": 4.0,
+        "ugr": 8.5
+      },
+      "1.5": {
+        "off_axis_deg": 76.4,
+        "lv_cd_m2": 4.1,
+        "ugr": 8.5
+      },
+      "3.0": {
+        "off_axis_deg": 75.6,
+        "lv_cd_m2": 4.1,
+        "ugr": 8.5
+      },
+      "4.5": {
+        "off_axis_deg": 74.9,
+        "lv_cd_m2": 4.2,
+        "ugr": 8.5
+      },
+      "6.0": {
+        "off_axis_deg": 74.3,
+        "lv_cd_m2": 4.3,
+        "ugr": 8.5
+      },
+      "7.5": {
+        "off_axis_deg": 73.8,
+        "lv_cd_m2": 4.4,
+        "ugr": 8.5
+      }
+    }
+  },
+  {
+    "seat_id": "C1_R2",
+    "seat_name": "靠窗第2排第1列(受灾典型)",
+    "angles": {
+      "0.0": {
+        "off_axis_deg": 70.5,
+        "lv_cd_m2": 4.8,
+        "ugr": 8.5
+      },
+      "1.5": {
+        "off_axis_deg": 69.5,
+        "lv_cd_m2": 4.9,
+        "ugr": 8.5
+      },
+      "3.0": {
+        "off_axis_deg": 68.5,
+        "lv_cd_m2": 5.1,
+        "ugr": 8.5
+      },
+      "4.5": {
+        "off_axis_deg": 67.6,
+        "lv_cd_m2": 5.2,
+        "ugr": 8.5
+      },
+      "6.0": {
+        "off_axis_deg": 66.9,
+        "lv_cd_m2": 5.3,
+        "ugr": 8.5
+      },
+      "7.5": {
+        "off_axis_deg": 66.2,
+        "lv_cd_m2": 5.4,
+        "ugr": 8.5
+      }
+    }
+  },
+  {
+    "seat_id": "C2_R2",
+    "seat_name": "靠窗第2排第2列",
+    "angles": {
+      "0.0": {
+        "off_axis_deg": 58.4,
+        "lv_cd_m2": 7.1,
+        "ugr": 8.5
+      },
+      "1.5": {
+        "off_axis_deg": 57.1,
+        "lv_cd_m2": 7.4,
+        "ugr": 8.5
+      },
+      "3.0": {
+        "off_axis_deg": 56.0,
+        "lv_cd_m2": 7.7,
+        "ugr": 8.5
+      },
+      "4.5": {
+        "off_axis_deg": 54.9,
+        "lv_cd_m2": 8.0,
+        "ugr": 8.5
+      },
+      "6.0": {
+        "off_axis_deg": 54.0,
+        "lv_cd_m2": 8.3,
+        "ugr": 8.5
+      },
+      "7.5": {
+        "off_axis_deg": 53.2,
+        "lv_cd_m2": 8.5,
+        "ugr": 8.5
+      }
+    }
+  },
+  {
+    "seat_id": "C3_R3",
+    "seat_name": "中左第3排第3列",
+    "angles": {
+      "0.0": {
+        "off_axis_deg": 47.3,
+        "lv_cd_m2": 10.8,
+        "ugr": 8.5
+      },
+      "1.5": {
+        "off_axis_deg": 45.8,
+        "lv_cd_m2": 11.6,
+        "ugr": 8.5
+      },
+      "3.0": {
+        "off_axis_deg": 44.4,
+        "lv_cd_m2": 12.4,
+        "ugr": 8.5
+      },
+      "4.5": {
+        "off_axis_deg": 43.1,
+        "lv_cd_m2": 13.1,
+        "ugr": 8.5
+      },
+      "6.0": {
+        "off_axis_deg": 41.9,
+        "lv_cd_m2": 13.9,
+        "ugr": 8.5
+      },
+      "7.5": {
+        "off_axis_deg": 40.9,
+        "lv_cd_m2": 14.6,
+        "ugr": 8.5
+      }
+    }
+  },
+  {
+    "seat_id": "C4_R3",
+    "seat_name": "中央第3排第4列",
+    "angles": {
+      "0.0": {
+        "off_axis_deg": 38.5,
+        "lv_cd_m2": 16.6,
+        "ugr": 8.5
+      },
+      "1.5": {
+        "off_axis_deg": 36.7,
+        "lv_cd_m2": 18.3,
+        "ugr": 8.5
+      },
+      "3.0": {
+        "off_axis_deg": 35.0,
+        "lv_cd_m2": 20.1,
+        "ugr": 8.5
+      },
+      "4.5": {
+        "off_axis_deg": 33.5,
+        "lv_cd_m2": 22.0,
+        "ugr": 8.5
+      },
+      "6.0": {
+        "off_axis_deg": 32.1,
+        "lv_cd_m2": 24.1,
+        "ugr": 8.5
+      },
+      "7.5": {
+        "off_axis_deg": 30.8,
+        "lv_cd_m2": 26.2,
+        "ugr": 8.5
+      }
+    }
+  },
+  {
+    "seat_id": "C5_R4",
+    "seat_name": "中央第4排第5列",
+    "angles": {
+      "0.0": {
+        "off_axis_deg": 34.7,
+        "lv_cd_m2": 20.5,
+        "ugr": 8.5
+      },
+      "1.5": {
+        "off_axis_deg": 32.7,
+        "lv_cd_m2": 23.1,
+        "ugr": 8.5
+      },
+      "3.0": {
+        "off_axis_deg": 30.9,
+        "lv_cd_m2": 26.0,
+        "ugr": 8.5
+      },
+      "4.5": {
+        "off_axis_deg": 29.2,
+        "lv_cd_m2": 29.2,
+        "ugr": 8.5
+      },
+      "6.0": {
+        "off_axis_deg": 27.6,
+        "lv_cd_m2": 32.9,
+        "ugr": 8.5
+      },
+      "7.5": {
+        "off_axis_deg": 26.1,
+        "lv_cd_m2": 36.8,
+        "ugr": 8.5
+      }
+    }
+  },
+  {
+    "seat_id": "C6_R5",
+    "seat_name": "中右第5排第6列",
+    "angles": {
+      "0.0": {
+        "off_axis_deg": 32.4,
+        "lv_cd_m2": 23.5,
+        "ugr": 8.5
+      },
+      "1.5": {
+        "off_axis_deg": 30.4,
+        "lv_cd_m2": 26.8,
+        "ugr": 8.5
+      },
+      "3.0": {
+        "off_axis_deg": 28.5,
+        "lv_cd_m2": 30.7,
+        "ugr": 8.5
+      },
+      "4.5": {
+        "off_axis_deg": 26.6,
+        "lv_cd_m2": 35.2,
+        "ugr": 8.5
+      },
+      "6.0": {
+        "off_axis_deg": 24.9,
+        "lv_cd_m2": 40.5,
+        "ugr": 8.5
+      },
+      "7.5": {
+        "off_axis_deg": 23.2,
+        "lv_cd_m2": 46.6,
+        "ugr": 8.5
+      }
+    }
+  },
+  {
+    "seat_id": "C8_R6",
+    "seat_name": "靠门第6排第8列",
+    "angles": {
+      "0.0": {
+        "off_axis_deg": 28.2,
+        "lv_cd_m2": 31.4,
+        "ugr": 8.5
+      },
+      "1.5": {
+        "off_axis_deg": 26.0,
+        "lv_cd_m2": 37.0,
+        "ugr": 8.5
+      },
+      "3.0": {
+        "off_axis_deg": 23.9,
+        "lv_cd_m2": 44.1,
+        "ugr": 8.5
+      },
+      "4.5": {
+        "off_axis_deg": 21.8,
+        "lv_cd_m2": 53.3,
+        "ugr": 8.5
+      },
+      "6.0": {
+        "off_axis_deg": 19.7,
+        "lv_cd_m2": 65.2,
+        "ugr": 8.5
+      },
+      "7.5": {
+        "off_axis_deg": 17.8,
+        "lv_cd_m2": 80.8,
+        "ugr": 8.5
+      }
+    }
+  }
+]

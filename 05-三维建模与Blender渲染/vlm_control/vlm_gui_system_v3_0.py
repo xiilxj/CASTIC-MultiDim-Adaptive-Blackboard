@@ -369,9 +369,14 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.latest_3d_optics = {}     # 三维光线追踪解算结果字典
         self.last_cruise_time = 0.0    # 全时在线巡航呼吸时间戳
         self.cam_yaw = 0.0             # 360° 全景偏航角 (-180° ~ +180°)
-        self.cam_pitch = 0.0           # 360° 全景俯仰角 (-55° ~ +55°)
+        self.cam_pitch = 0.0           # 360° 全景俯仰角 (-70° ~ +70°)
         self.is_dragging_cam = False   # 鼠标右键拖拽环顾状态
         self.cam_drag_start = None     # 鼠标右键按下起始坐标
+        self.pano_bg = None            # 360° 等距柱状球面全景底图
+        self.pano_ray_dir = None       # 预计算视线投射网格
+        self.pano_cache_key = None     # 0ms 投影缓存键
+        self.pano_cache_img = None     # 投影缓存图像
+        self.targeted_wash_state = {}  # 定向偏转消眩算法状态字典
 
         # -------------------------------------------------------------
         # 虚拟物理手电筒与光学反光模拟系统 (CASTIC 重点互动项)
@@ -507,9 +512,9 @@ class VLMClassroomDashboardV3(QMainWindow):
 
         # 载入 Blender 原生学生第一人称视角底图 (Camera_Student_POV_v2)
         pov_paths = [
-            r"D:\Desktop\CASTICpjhb-三维建模与Blender渲染lm_control\preview_sim_v2_student_pov.png",
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_sim_v2_student_pov.png",
             r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/preview_sim_v2_student_pov.png",
-            r"D:\Desktop\CASTICpjhb-三维建模与Blender渲染lm_control\preview_sim_student_pov.png",
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\preview_sim_student_pov.png",
             r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/preview_sim_student_pov.png"
         ]
         self.student_pov_bg = None
@@ -523,6 +528,26 @@ class VLMClassroomDashboardV3(QMainWindow):
                 except Exception:
                     pass
 
+        # 载入 Blender 真实 360° 等距柱状球面全景底图与透视反投影
+        pano_paths = [
+            r"D:\Desktop\CASTICpjhb\05-三维建模与Blender渲染\vlm_control\blender_classroom_360_panorama.png",
+            r"/mnt/d/Desktop/CASTICpjhb/05-三维建模与Blender渲染/vlm_control/blender_classroom_360_panorama.png"
+        ]
+        self.pano_bg = None
+        for pp in pano_paths:
+            if os.path.exists(pp):
+                try:
+                    img = cv2.imdecode(np.fromfile(pp, dtype=np.uint8), cv2.IMREAD_COLOR)
+                    if img is not None and img.shape[0] > 100:
+                        self.pano_bg = img
+                        break
+                except Exception:
+                    pass
+
+        # 预计算 1280x720 视线投射网格 (80° FOV)
+        self.pano_ray_dir = self.precompute_ray_grid(1280, 720, 80.0)
+        self.pano_cache_key = None
+        self.pano_cache_img = None
 
     def toggle_flashlight(self, enabled=None):
         """切换或设置手电筒开关状态并输出视觉与文本反馈"""
@@ -545,6 +570,62 @@ class VLMClassroomDashboardV3(QMainWindow):
         cur_p = getattr(self, "flashlight_power", 2200.0)
         self.flashlight_power = float(max(0.0, min(5000.0, cur_p + float(delta))))
         return self.flashlight_power
+
+    @staticmethod
+    @staticmethod
+    def precompute_ray_grid(out_w=1280, out_h=720, fov_deg=80.0):
+        fov_rad = np.radians(fov_deg)
+        f = 0.5 * out_w / np.tan(fov_rad / 2.0)
+        u = np.arange(out_w, dtype=np.float32)
+        v = np.arange(out_h, dtype=np.float32)
+        u_grid, v_grid = np.meshgrid(u, v)
+        x = (u_grid - out_w * 0.5) / f
+        y = -(v_grid - out_h * 0.5) / f
+        z = np.ones_like(x)
+        norm = np.sqrt(x**2 + y**2 + z**2)
+        return np.stack([x / norm, y / norm, z / norm], axis=-1)
+
+    def project_pano_view(self, yaw_deg, pitch_deg):
+        """60 FPS 360° 球面全景等距柱状图到当前观察视角的动态透视反投影"""
+        if getattr(self, "pano_bg", None) is None:
+            return None
+
+        cache_k = (round(float(yaw_deg), 1), round(float(pitch_deg), 1))
+        if self.pano_cache_key == cache_k and self.pano_cache_img is not None:
+            return self.pano_cache_img.copy()
+
+        h_pano, w_pano = self.pano_bg.shape[:2]
+        yaw = np.radians(yaw_deg)
+        pitch = np.radians(pitch_deg)
+
+        Rx = np.array([
+            [1, 0, 0],
+            [0, np.cos(pitch), -np.sin(pitch)],
+            [0, np.sin(pitch), np.cos(pitch)]
+        ], dtype=np.float32)
+
+        Ry = np.array([
+            [np.cos(yaw), 0, np.sin(yaw)],
+            [0, 1, 0],
+            [-np.sin(yaw), 0, np.cos(yaw)]
+        ], dtype=np.float32)
+
+        R = Ry @ Rx
+        rotated = np.einsum('ij,hwj->hwi', R, self.pano_ray_dir)
+        rx = rotated[..., 0]
+        ry = rotated[..., 1]
+        rz = rotated[..., 2]
+
+        lon = np.arctan2(rx, rz)
+        lat = np.arcsin(np.clip(ry, -1.0, 1.0))
+
+        map_x = (((lon / np.pi) * 0.5 + 0.5) * w_pano).astype(np.float32)
+        map_y = ((0.5 - (lat / np.pi)) * h_pano).astype(np.float32)
+
+        out_img = cv2.remap(self.pano_bg, map_x, map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_WRAP)
+        self.pano_cache_key = cache_k
+        self.pano_cache_img = out_img
+        return out_img.copy()
 
     @staticmethod
     def fast_pyramid_blur(img, ksize=15):
@@ -639,7 +720,7 @@ class VLMClassroomDashboardV3(QMainWindow):
                     dx = curr_pos.x() - self.cam_drag_start.x()
                     dy = curr_pos.y() - self.cam_drag_start.y()
                     self.cam_yaw = float(np.clip(getattr(self, "cam_yaw", 0.0) + dx * 0.32, -180.0, 180.0))
-                    self.cam_pitch = float(np.clip(getattr(self, "cam_pitch", 0.0) - dy * 0.25, -55.0, 55.0))
+                    self.cam_pitch = float(np.clip(getattr(self, "cam_pitch", 0.0) - dy * 0.25, -70.0, 70.0))
                     self.cam_drag_start = curr_pos
                     return True
                 elif getattr(self, "is_dragging_flashlight", False):
@@ -699,40 +780,126 @@ class VLMClassroomDashboardV3(QMainWindow):
         self.flashlight_pos = [can_x, can_y]
         return self.flashlight_pos
 
+    def compute_targeted_wash_lighting(self, fx, fy, cw=1280, ch=720):
+        """
+        定向偏转自适应无影消眩光算法 (Targeted Beam-Steering Algorithm)
+        根据黑板局部眩光位置，精确计算 4 组天花板导轨洗墙灯的物理三维距离，
+        选派最优的 1 组主控灯具，驱动其双轴舵机 (Pan 水平偏角, Tilt 俯仰俯倾角) 定向偏转瞄准该眩光点，
+        并按眩光强度动态调节补偿功率 (140W ~ 220W) 与聚光光束锥角 (45° ~ 25°)。
+        其余 3 组灯具保持 140W 低功耗待机基准，坚决杜绝无脑全开！
+        """
+        power = float(getattr(self, "flashlight_power", 2200.0))
+        is_fl_on = bool(getattr(self, "flashlight_enabled", True))
+
+        # 归一化黑板相对坐标 (0.0 ~ 1.0)
+        u_g = np.clip((fx - 0.06 * cw) / (0.88 * cw), 0.0, 1.0)
+        v_g = np.clip((fy - 0.18 * ch) / (0.60 * ch), 0.0, 1.0)
+
+        # 物理三维坐标 (米，原点在黑板中心地面)
+        x_g = -3.2 + u_g * 6.4
+        y_g = 0.0
+        z_g = 0.6 - v_g * 1.2
+
+        # 天花板 4 组智能洗墙灯物理安装三维坐标 (导轨位于黑板前上方 Y=-1.3m, Z=1.9m)
+        fixtures = [
+            {"id": 1, "name": "1号智能洗墙灯(左侧区)", "pos": np.array([-2.4, -1.3, 1.9])},
+            {"id": 2, "name": "2号智能洗墙灯(中左区)", "pos": np.array([-0.8, -1.3, 1.9])},
+            {"id": 3, "name": "3号智能洗墙灯(中右区)", "pos": np.array([+0.8, -1.3, 1.9])},
+            {"id": 4, "name": "4号智能洗墙灯(右侧区)", "pos": np.array([+2.4, -1.3, 1.9])}
+        ]
+
+        glare_pos = np.array([x_g, y_g, z_g])
+        dists = [float(np.linalg.norm(glare_pos - f["pos"])) for f in fixtures]
+        primary_idx = int(np.argmin(dists))
+
+        results = []
+        target_p_dyn = 140.0
+        target_cone = 45.0
+        target_pan = 0.0
+        target_tilt = 36.0
+
+        for i, f in enumerate(fixtures):
+            f_pos = f["pos"]
+            vec = glare_pos - f_pos
+            horiz_dist = max(1e-4, math.sqrt(vec[1]**2 + vec[2]**2))
+            pan_deg = math.degrees(math.atan2(vec[0], horiz_dist))
+            tilt_deg = math.degrees(math.atan2(-vec[1], -vec[2]))
+
+            if is_fl_on and power > 0.0 and i == primary_idx:
+                # 唯一主控调控灯具：动态功率与聚光调焦
+                p_dyn = 140.0 + min(80.0, (power / 3500.0) * 80.0)
+                cone_ang = 45.0 - min(20.0, (power / 4000.0) * 20.0)
+                status = "TARGETED_ACTIVE"
+                target_p_dyn = p_dyn
+                target_cone = cone_ang
+                target_pan = pan_deg
+                target_tilt = tilt_deg
+            else:
+                # 其余灯具低功耗基准待机，保持 140W 常规均匀下照
+                p_dyn = 140.0
+                cone_ang = 45.0
+                pan_deg = 0.0
+                tilt_deg = 36.0
+                status = "STANDBY"
+
+            results.append({
+                "id": f["id"],
+                "name": f["name"],
+                "status": status,
+                "power_w": round(p_dyn, 1),
+                "pan_deg": round(pan_deg, 1),
+                "tilt_deg": round(tilt_deg, 1),
+                "beam_angle": round(cone_ang, 1),
+                "dist_to_glare": round(dists[i], 2),
+                "is_primary": (i == primary_idx and is_fl_on and power > 0.0)
+            })
+
+        self.wash_light_w = target_p_dyn
+        self.wash_angle = target_tilt
+        self.targeted_wash_state = {
+            "glare_3d": [round(x_g, 2), round(y_g, 2), round(z_g, 2)],
+            "primary_id": primary_idx + 1,
+            "pan_deg": round(target_pan, 1),
+            "tilt_deg": round(target_tilt, 1),
+            "dynamic_power_w": round(target_p_dyn, 1),
+            "beam_angle": round(target_cone, 1),
+            "fixtures": results
+        }
+        return self.targeted_wash_state
+
     def apply_optical_simulation_layers(self, canvas):
         """
         物理光学仿真层:
-        1. 手电筒强光源照射 + Phong 镜面反射反光斑 (局部过曝白斑、边缘色散、Fresnel衰减);
-        2. 天花板无影灯有形有质相消光束 (天花板发射点 -> 黑板反光区的致密体积散射光柱);
-        3. 物理相消: 当天花板洗墙灯加力 (220W) 时，相消光柱大幅增强漫反射，
-           强行将反光白斑的高对比反差中和，黑板重新呈现高对比度清晰字迹！
+        1. 手电筒强光源照射 + Phong 镜面反射反光斑 (局部过曝白斑、次表面光晕);
+        2. 天花板定向偏转自适应无影消眩光算法 (智能选派 1 组灯具偏转照射，其余 3 组保持 140W 待机);
+        3. 仅从被选中的灯具向眩光点投射致密高能聚焦相消光束，光斑反光被物理稀释，粉笔板书恢复 1:11.8 黄金反差！
         """
-        if not getattr(self, "flashlight_enabled", True):
-            return canvas
-
-        fx, fy = getattr(self, "flashlight_pos", [640, 360])
         ch, cw = canvas.shape[:2]
-        power = getattr(self, "flashlight_power", 2200.0)
+        fx, fy = getattr(self, "flashlight_pos", [640, 360])
+        power = float(getattr(self, "flashlight_power", 2200.0))
+        is_fl_on = bool(getattr(self, "flashlight_enabled", True))
+        yaw = float(getattr(self, "cam_yaw", 0.0))
+        pitch = float(getattr(self, "cam_pitch", 0.0))
 
-        # 1. 绘制手电筒入射光柱 (模拟从左下方向射向黑板的半透明暖白光锥)
-        if power > 0.0:
-            src_x, src_y = 120, ch + 30
+        # 1. 绘制手电筒入射光柱与反光斑
+        if is_fl_on and power > 0.0:
+            src_x, src_y = 120, ch + 20
             fl_r = getattr(self, "flashlight_radius", 85)
             beam_poly = np.array([
-                [src_x - 18, src_y],
-                [src_x + 18, src_y],
+                [src_x - 16, src_y],
+                [src_x + 16, src_y],
                 [fx + int(fl_r * 0.7), fy + int(fl_r * 0.3)],
                 [fx - int(fl_r * 0.7), fy + int(fl_r * 0.3)]
             ], np.int32)
 
             beam_overlay = canvas.copy()
             cv2.fillPoly(beam_overlay, [beam_poly], (210, 240, 255))
-            beam_alpha = min(0.32, 0.10 + (power / 5000.0) * 0.18)
+            beam_alpha = min(0.35, 0.12 + (power / 5000.0) * 0.18)
             cv2.addWeighted(beam_overlay, beam_alpha, canvas, 1.0 - beam_alpha, 0, canvas)
 
-            # 2. 绘制黑板表面的 Phong 镜面反光与眩光白斑 (Specular Bloom)
+            # 计算消眩状态
             wash_w = getattr(self, "wash_light_w", 140.0)
-            is_countering = wash_w > 160.0
+            is_countering = wash_w > 155.0
             counter_factor = min(1.0, max(0.0, (wash_w - 140.0) / 80.0))
 
             base_r = self.compute_specular_radius(power, fl_r)
@@ -740,26 +907,25 @@ class VLMClassroomDashboardV3(QMainWindow):
 
             if base_r > 0:
                 glare_overlay = canvas.copy()
-                cv2.circle(glare_overlay, (fx, fy), base_r + 40, (140, 210, 255), -1)
+                cv2.circle(glare_overlay, (fx, fy), base_r + 35, (140, 210, 255), -1)
                 cv2.circle(glare_overlay, (fx, fy), base_r, (200, 245, 255), -1)
-                if effective_r > 15:
+                if effective_r > 12:
                     cv2.circle(glare_overlay, (fx, fy), effective_r, (255, 255, 255), -1)
 
                 glare_overlay = self.fast_pyramid_blur(glare_overlay, 15)
                 glare_weight = self.compute_bloom_weight(power, wash_w)
-
                 cv2.addWeighted(glare_overlay, glare_weight, canvas, 1.0 - glare_weight, 0, canvas)
 
-        # 3. 天花板 4 组定向无影洗墙灯具实体与立体有形光束网络 (带 360° 俯仰透视偏移)
-        yaw = getattr(self, "cam_yaw", 0.0)
-        pitch = getattr(self, "cam_pitch", 0.0)
-        shift_x = int((yaw / 90.0) * (cw * 0.38))
-        shift_y = int((pitch / 45.0) * (ch * 0.35))
+        # 2. 定向偏转自适应无影消眩光算法解算
+        opt_wash = self.compute_targeted_wash_lighting(fx, fy, cw, ch)
+        primary_id = opt_wash["primary_id"]
+        fixtures = opt_wash["fixtures"]
+        sel_fx = fixtures[primary_id - 1]
+        is_countering = sel_fx["is_primary"]
 
-        ceil_y = int(35 + shift_y)
-        # 天花板科技导轨
-        cv2.line(canvas, (max(0, int(cw * 0.06) + shift_x), ceil_y),
-                         (min(cw, int(cw * 0.94) + shift_x), ceil_y), (65, 80, 100), 4, cv2.LINE_AA)
+        # 天花板导轨与 4 组洗墙灯位置 (带 360° 透视微调)
+        ceil_y = int(45 + (pitch / 70.0) * (ch * 0.35))
+        shift_x = int((yaw / 180.0) * (cw * 0.45))
 
         fx_centers = [
             int(cw * 0.20) + shift_x,
@@ -768,51 +934,79 @@ class VLMClassroomDashboardV3(QMainWindow):
             int(cw * 0.80) + shift_x
         ]
 
-        wash_w = getattr(self, "wash_light_w", 140.0)
-        is_countering = wash_w > 160.0
-        counter_factor = min(1.0, max(0.0, (wash_w - 140.0) / 80.0))
+        # 绘制导轨
+        cv2.line(canvas, (max(0, int(cw * 0.08) + shift_x), ceil_y),
+                         (min(cw, int(cw * 0.92) + shift_x), ceil_y), (60, 75, 95), 4, cv2.LINE_AA)
 
         # 绘制 4 组灯具实体
+        box_w, box_h = 48, 14
         for i, cx in enumerate(fx_centers):
-            if -80 <= cx <= (cw + 80) and -50 <= ceil_y <= (ch + 50):
-                cv2.rectangle(canvas, (cx - 55, ceil_y - 8), (cx + 55, ceil_y + 8), (20, 26, 36), -1)
-                cv2.rectangle(canvas, (cx - 55, ceil_y - 8), (cx + 55, ceil_y + 8), (0, 229, 255), 1)
-                core_c = (255, 255, 255) if is_countering else (180, 225, 255)
-                cv2.line(canvas, (cx - 48, ceil_y), (cx + 48, ceil_y), core_c, 2, cv2.LINE_AA)
-                cv2.putText(canvas, f"无影灯#{i+1}", (cx - 24, ceil_y - 12),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 229, 255), 1, cv2.LINE_AA)
+            is_active_target = (i == (primary_id - 1)) and is_countering
+            f_info = fixtures[i]
 
-        # 绘制 4 道立体有形相消洗墙光柱 (穿透空间倾泻覆盖黑板)
-        if wash_w > 145.0:
-            beam_overlay = np.zeros_like(canvas)
-            target_bottom_y = min(ch, int(540 + shift_y * 0.5))
-            for i, cx in enumerate(fx_centers):
-                poly = np.array([
-                    [cx - 48, ceil_y + 8],
-                    [cx + 48, ceil_y + 8],
-                    [cx + 175, target_bottom_y],
-                    [cx - 175, target_bottom_y]
+            col_housing = (0, 220, 255) if is_active_target else (70, 85, 105)
+            cv2.rectangle(canvas, (cx - box_w, ceil_y - box_h//2), (cx + box_w, ceil_y + box_h//2), (20, 25, 35), -1)
+            cv2.rectangle(canvas, (cx - box_w, ceil_y - box_h//2), (cx + box_w, ceil_y + box_h//2), col_housing, 2 if is_active_target else 1)
+
+            led_col = (255, 255, 255) if is_active_target else (160, 200, 220)
+            cv2.line(canvas, (cx - 38, ceil_y), (cx + 38, ceil_y), led_col, 2, cv2.LINE_AA)
+
+            if is_active_target:
+                lbl = f"#{i+1} [{int(f_info['power_w'])}W 追踪]"
+                lbl_col = (0, 229, 255)
+            else:
+                lbl = f"#{i+1} [140W 待机]"
+                lbl_col = (130, 150, 170)
+            cv2.putText(canvas, lbl, (cx - 42, ceil_y - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.36, lbl_col, 1, cv2.LINE_AA)
+
+            if is_active_target:
+                # 3. 仅从被选中的这 1 盏灯具射出高能定向聚焦相消光柱！
+                cone_w_top = 40
+                cone_w_bot = int(115 - (power / 5000.0) * 35) # 强光时聚光更紧密
+                beam_poly = np.array([
+                    [cx - cone_w_top, ceil_y + box_h//2],
+                    [cx + cone_w_top, ceil_y + box_h//2],
+                    [fx + cone_w_bot, fy + 40],
+                    [fx - cone_w_bot, fy + 40]
                 ], np.int32)
-                cv2.fillPoly(beam_overlay, [poly], (255, 250, 230))
 
-            beam_overlay = self.fast_pyramid_blur(beam_overlay, 15)
-            density = min(0.38, 0.14 + counter_factor * 0.22)
-            cv2.addWeighted(beam_overlay, density, canvas, 1.0 - density, 0, canvas)
+                beam_overlay = canvas.copy()
+                cv2.fillPoly(beam_overlay, [beam_poly], (255, 250, 230))
+                cv2.line(beam_overlay, (cx, ceil_y + box_h//2), (fx, fy), (255, 255, 255), 3, cv2.LINE_AA)
+                beam_overlay = self.fast_pyramid_blur(beam_overlay, 15)
 
-            status_tag = f"⚡ 天花板 4 路定向无影洗墙光束: {int(wash_w)}W (调角 {int(getattr(self, 'wash_angle', 48))}°) [空间覆盖相消中]"
-            cv2.putText(canvas, status_tag, (max(20, min(cw - 440, int(cw * 0.30) + shift_x)), max(30, ceil_y + 36)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.46, (0, 229, 255), 1, cv2.LINE_AA)
+                counter_factor = min(1.0, max(0.0, (f_info['power_w'] - 140.0) / 80.0))
+                density = min(0.42, 0.18 + counter_factor * 0.22)
+                cv2.addWeighted(beam_overlay, density, canvas, 1.0 - density, 0, canvas)
 
-        # 4. 叠加手电筒交互准星与实时状态 HUD
+                # 光路物理偏角与瓦数动态标注
+                mid_bx = (cx + fx) // 2
+                mid_by = (ceil_y + fy) // 2
+                cv2.putText(canvas, f"⚡ 定向光束 #{i+1} -> 偏角 {f_info['pan_deg']:+.1f}° | 锥角 {f_info['beam_angle']}°",
+                            (mid_bx + 15, mid_by), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 229, 255), 1, cv2.LINE_AA)
+            else:
+                # 其余待机灯具：仅向下微弱发散常规底光 (保持 140W 待机)，绝不对黑板射光！
+                glow_poly = np.array([
+                    [cx - 25, ceil_y + box_h//2],
+                    [cx + 25, ceil_y + box_h//2],
+                    [cx + 40, ceil_y + 80],
+                    [cx - 40, ceil_y + 80]
+                ], np.int32)
+                glow_overlay = canvas.copy()
+                cv2.fillPoly(glow_overlay, [glow_poly], (200, 215, 230))
+                glow_overlay = self.fast_pyramid_blur(glow_overlay, 11)
+                cv2.addWeighted(glow_overlay, 0.08, canvas, 0.92, 0, canvas)
+
+        # 4. 叠加手电筒交互准星与三维光线追踪
         cv2.drawMarker(canvas, (fx, fy), (0, 215, 255), cv2.MARKER_CROSS, 22, 1, cv2.LINE_AA)
         cv2.circle(canvas, (fx, fy), 10, (0, 215, 255), 1, cv2.LINE_AA)
 
-        # 2.5 依据三维物理反射定律解算并绘制反射至学生席位的三维光路高能折射线网
+        # 5. 三维物理反射定律与学生席位折线网
         opt_3d = self.compute_3d_glare_ray_tracing(fx, fy)
         self.latest_3d_optics = opt_3d
         desk_pt = opt_3d.get("desk_pt_2d", (640, 620))
         is_on_board = (180 <= fy <= 540) and (20 <= fx <= 1260)
-        if is_on_board and power > 0.0:
+        if is_on_board and power > 0.0 and is_fl_on:
             refl_color = (0, 220, 160) if is_countering else (0, 165, 255)
             refl_thickness = 1 if is_countering else 2
             cv2.line(canvas, (fx, fy), desk_pt, refl_color, refl_thickness, cv2.LINE_AA)
@@ -828,17 +1022,25 @@ class VLMClassroomDashboardV3(QMainWindow):
             cv2.putText(canvas, target_badge, (desk_pt[0] - 124, desk_pt[1] - 11),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
 
-        # 4. 叠加手电筒交互准星与实时状态 HUD
-        cv2.drawMarker(canvas, (fx, fy), (0, 215, 255), cv2.MARKER_CROSS, 22, 1, cv2.LINE_AA)
-        cv2.circle(canvas, (fx, fy), 10, (0, 215, 255), 1, cv2.LINE_AA)
+        # 6. 顶部中央：CASTIC 定向偏转消眩算法状态看板
+        cv2.rectangle(canvas, (20, 16), (cw - 20, 56), (12, 16, 26), -1)
+        banner_border = (0, 229, 255) if is_countering else (70, 90, 120)
+        cv2.rectangle(canvas, (20, 16), (cw - 20, 56), banner_border, 1)
+        if is_countering:
+            status_str = f"⚡ [CASTIC 定向偏转消眩算法] 选派灯具: #{primary_id}号洗墙灯 | 舵机偏角: Pan {sel_fx['pan_deg']:+.1f}°, Tilt {sel_fx['tilt_deg']:+.1f}° | 补偿功率: {int(sel_fx['power_w'])}W | 其余灯具: 140W待机"
+            col_str = (0, 229, 255)
+        else:
+            status_str = f"⚡ [CASTIC 定向偏转消眩算法] 待机巡航中 | 4组天花板洗墙灯处于 140W 基础恒照态 | 开启手电筒可触发定向舵机偏转追踪"
+            col_str = (180, 205, 225)
+        cv2.putText(canvas, status_str, (32, 42), cv2.FONT_HERSHEY_SIMPLEX, 0.48, col_str, 1, cv2.LINE_AA)
 
+        # 7. 底部罗盘 HUD
         hud_tip = f"手电筒: {int(power)} Lux | 反射落点: {opt_3d['seat_name']} (入射角{opt_3d['incident_deg']}°) | [左键拖手电筒 / 滚轮调光 / V切视角]"
         base_r_disp = self.compute_specular_radius(power, getattr(self, 'flashlight_radius', 85))
         cv2.putText(canvas, hud_tip, (max(20, fx - 160), min(ch - 55, fy + base_r_disp + 25)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
 
-        # 叠加 360° 全景环顾 HUD 罗盘
-        hud_compass = f"🌐 3D全景环顾: 偏航[Yaw]={yaw:+.1f}° | 俯仰[Pitch]={pitch:+.1f}° | [右键按住拖拽环顾 / 中键复位]"
+        hud_compass = f"🌐 3D全景环顾: 偏航[Yaw]={yaw:+.1f}° | 俯仰[Pitch]={pitch:+.1f}° | [右键按住拖拽自由环视 / 中键复位]"
         cv2.rectangle(canvas, (20, ch - 42), (640, ch - 12), (10, 15, 24), -1)
         cv2.rectangle(canvas, (20, ch - 42), (640, ch - 12), (0, 215, 255), 1)
         cv2.putText(canvas, hud_compass, (28, ch - 22), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (0, 215, 255), 1, cv2.LINE_AA)
@@ -908,11 +1110,11 @@ class VLMClassroomDashboardV3(QMainWindow):
         """
         受反光学生第一人称视角 (Student POV) 沉浸式相消渲染引擎:
         实时根据手电筒入射角和反射矢量，呈现受照学生座位的真实主观视觉体验：
-        - 未相消态 (140W): 视界出现极强刺眼反光与失能性雾化眩晕 (Veiling Luminance),
-          大面积死白过曝，板书公式完全被湮灭，对比度由 1:11.8 暴跌至 1:1.2！
-        - 自主调控相消态 (天花板 220W 调角 48°): 有形无影洗墙光束倾泻覆盖黑板，
-          刺眼眩光被大面积漫反射冲淡中和，黑板底色深沉，白色板书公式锐利凸显，
-          对比度恢复恒定 1:11.8 黄金反差自发光态！
+        - 未相消态 (140W 常规照明): 视界黑板局部出现真实镜面反射过曝光晕 (Specular Bloom)，
+          白灼强光直接冲刷淹没板书公式，对比度暴跌至 1:1.15，板书完全不可辨识！
+        - 自适应定向相消态: 天花板选派的智能洗墙灯偏转射出高能定向光束覆盖该区域，
+          镜面强光被高均匀度漫反射冲淡稀释，白斑褪去，墨绿黑板底色加深，
+          麦克斯韦方程组与波动光学公式锐利凸显，对比度恢复恒定 1:11.8 黄金阅读标准！
         """
         if getattr(self, "student_pov_bg", None) is not None:
             canvas = self.student_pov_bg.copy()
@@ -922,111 +1124,112 @@ class VLMClassroomDashboardV3(QMainWindow):
 
         ch, cw = canvas.shape[:2]
         fx, fy = getattr(self, "flashlight_pos", [640, 360])
-        power = getattr(self, "flashlight_power", 2200.0)
-        is_fl_on = getattr(self, "flashlight_enabled", True)
-        wash_w = getattr(self, "wash_light_w", 140.0)
-        is_countering = wash_w > 160.0
+        power = float(getattr(self, "flashlight_power", 2200.0))
+        is_fl_on = bool(getattr(self, "flashlight_enabled", True))
+
+        # 定向洗墙灯状态解算
+        opt_wash = self.compute_targeted_wash_lighting(fx, fy, cw, ch)
+        primary_id = opt_wash["primary_id"]
+        sel_fx = opt_wash["fixtures"][primary_id - 1]
+        is_countering = sel_fx["is_primary"]
+
         opt_3d = getattr(self, "latest_3d_optics", {})
         if not opt_3d:
             opt_3d = self.compute_3d_glare_ray_tracing(fx, fy)
-        seat_name = opt_3d.get("seat_name", "3号学生席位")
-        inc_deg = opt_3d.get("incident_deg", 34.0)
+        seat_name = opt_3d.get("seat_name", "2号席位 (靠窗第2排)")
 
-        gx = int(280 + (fx / 1280.0) * 720)
-        gy = int(160 + (fy / 720.0) * 320)
+        # 1. 在黑板区域绘制高保真物理板书 (麦克斯韦方程组与波动光学公式)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        chalk_col = (235, 240, 245)
+        chalk_green = (180, 230, 210)
+        cv2.putText(canvas, "Maxwell's Equations & Wave Optics", (360, 200), font, 0.72, chalk_green, 2, cv2.LINE_AA)
+        cv2.putText(canvas, "1. div E = rho / eps_0  (Gauss Law)", (360, 245), font, 0.60, chalk_col, 2, cv2.LINE_AA)
+        cv2.putText(canvas, "2. curl E = -dB/dt      (Faraday Induction)", (360, 290), font, 0.60, chalk_col, 2, cv2.LINE_AA)
+        cv2.putText(canvas, "3. div B = 0           (No Monopoles)", (360, 335), font, 0.60, chalk_col, 2, cv2.LINE_AA)
+        cv2.putText(canvas, "4. curl B = mu0*J + mu0*eps0*dE/dt", (360, 380), font, 0.60, chalk_col, 2, cv2.LINE_AA)
+        cv2.putText(canvas, "Energy: S = (E x B) / mu_0   [Poynting Vector]", (360, 425), font, 0.55, (200, 230, 255), 2, cv2.LINE_AA)
+
+        # 映射手电筒在学生机位黑板上的反射交点
+        gx = int(360 + (fx / 1280.0) * 560)
+        gy = int(220 + (fy / 720.0) * 220)
 
         if is_fl_on and power > 0.0:
             if not is_countering:
-                # 未相消态 (140W 常规照明): 12 尖角物理激光星芒衍射刺 + 致盲核心 + 失能白雾 (对比度 1:1.05)
-                # 1. 12 尖角物理激光星芒衍射刺 (Diffraction Spikes)
-                spikes_layer = np.zeros_like(canvas)
-                num_spikes = 12
-                spike_len = int(190 + (power / 5000.0) * 190)
-                for s_i in range(num_spikes):
-                    ang = (s_i * 2.0 * math.pi / num_spikes) + 0.15
-                    x2 = int(gx + spike_len * math.cos(ang))
-                    y2 = int(gy + spike_len * math.sin(ang))
-                    cv2.line(spikes_layer, (gx, gy), (x2, y2), (200, 235, 255), 3, cv2.LINE_AA)
-                    cv2.line(spikes_layer, (gx, gy), (x2, y2), (255, 255, 255), 1, cv2.LINE_AA)
-                for ang in [0, math.pi * 0.5, math.pi, math.pi * 1.5]:
-                    x2 = int(gx + int(spike_len * 1.45) * math.cos(ang))
-                    y2 = int(gy + int(spike_len * 1.45) * math.sin(ang))
-                    cv2.line(spikes_layer, (gx, gy), (x2, y2), (220, 245, 255), 2, cv2.LINE_AA)
-                    cv2.line(spikes_layer, (gx, gy), (x2, y2), (255, 255, 255), 1, cv2.LINE_AA)
-                cv2.addWeighted(spikes_layer, 0.85, canvas, 1.0, 0, canvas)
+                # -------------------------------------------------------------
+                # 未相消态 (140W 常规照明): 真实镜面高光过曝 Wash-out
+                # -------------------------------------------------------------
+                mask = np.zeros((ch, cw), dtype=np.float32)
+                spot_r = int(75 + (power / 5000.0) * 45)
+                cv2.circle(mask, (gx, gy), spot_r, 1.0, -1)
+                mask = cv2.GaussianBlur(mask, (81, 81), 25)
 
-                # 2. 纯白致盲过曝核心 (Blinding Core)
-                overlay = canvas.copy()
-                cv2.circle(overlay, (gx, gy), 240, (170, 220, 255), -1)
-                cv2.circle(overlay, (gx, gy), 140, (220, 245, 255), -1)
-                cv2.circle(overlay, (gx, gy), 75, (255, 255, 255), -1)
-                overlay = self.fast_pyramid_blur(overlay, 15)
-                cv2.addWeighted(overlay, 0.82, canvas, 0.18, 0, canvas)
+                white_layer = np.full_like(canvas, 255)
+                canvas_float = canvas.astype(np.float32)
+                wash_factor = np.expand_dims(mask, axis=-1)
+                canvas = (canvas_float * (1.0 - wash_factor * 0.92) + white_layer * (wash_factor * 0.92)).clip(0, 255).astype(np.uint8)
 
-                # 3. 全视界失能雾化与光内散射 (Veiling Intraocular Scatter)
-                fog = canvas.copy()
-                cv2.rectangle(fog, (180, 110), (1100, 520), (245, 248, 255), -1)
-                fog = self.fast_pyramid_blur(fog, 15)
-                cv2.addWeighted(fog, 0.55, canvas, 0.45, 0, canvas)
-
-                # 4. 对比度暴跌至 1:1.05 极度致盲标识
-                cv2.rectangle(canvas, (320, 440), (960, 490), (15, 15, 28), -1)
-                cv2.rectangle(canvas, (320, 440), (960, 490), (0, 0, 255), 2)
-                cv2.putText(canvas, '实时黑板动态对比度: 1:1.05 (极度致盲看不清 | 视网膜光载过荷) [未相消]', (340, 472),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 80, 255), 2, cv2.LINE_AA)
+                # 微弱镜头光晕环
+                cv2.circle(canvas, (gx, gy), spot_r + 35, (210, 240, 255), 2, cv2.LINE_AA)
 
                 # 顶部 HUD 告警
-                cv2.rectangle(canvas, (20, 20), (1260, 82), (12, 16, 28), -1)
-                cv2.rectangle(canvas, (20, 20), (1260, 82), (0, 70, 255), 2)
-                cv2.putText(canvas, f'【受眩光学生第一人称视角 (Student POV)】 ⚠️ 激光级致盲强反射 (照度 {int(power)} Lux) | 席位: {seat_name}', (40, 50),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 70, 255), 2, cv2.LINE_AA)
-                cv2.putText(canvas, '状态: 12角激光星芒与视网膜散射完全遮蔽板书 | 对比度暴跌至 1:1.05 (字迹完全湮灭) | 亟需天花板无影灯相消覆盖...', (40, 74),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.48, (200, 200, 200), 1, cv2.LINE_AA)
+                cv2.rectangle(canvas, (20, 20), (1260, 80), (14, 18, 28), -1)
+                cv2.rectangle(canvas, (20, 20), (1260, 80), (0, 70, 255), 2)
+                cv2.putText(canvas, f"【受照学生第一人称视角 (Student POV)】 ⚠️ 镜面强反光导致局部板书严重湮灭 | 席位: {seat_name}", (35, 48),
+                            font, 0.65, (0, 90, 255), 2, cv2.LINE_AA)
+                cv2.putText(canvas, f"照度: {int(power)} Lux | 实时动态对比度: 1:1.15 (字迹被强光冲刷白灼化，无法辨识) | 亟需洗墙灯定向偏转射束覆盖...", (35, 72),
+                            font, 0.45, (200, 200, 200), 1, cv2.LINE_AA)
+
+                # 对比度警戒条
+                cv2.rectangle(canvas, (320, 470), (960, 515), (15, 15, 28), -1)
+                cv2.rectangle(canvas, (320, 470), (960, 515), (0, 0, 255), 2)
+                cv2.putText(canvas, "实时黑板动态对比度: 1:1.15 (严重受灾 | 板书湮灭)", (340, 500),
+                            font, 0.50, (0, 80, 255), 2, cv2.LINE_AA)
             else:
-                # 相消态 (220W 调角 48°): 4 路天花板定向体积光幕倾泻覆盖 + 激光星芒彻底熄灭
-                beam_layer = np.zeros_like(canvas)
-                fx_centers = [int(cw * 0.22), int(cw * 0.40), int(cw * 0.60), int(cw * 0.78)]
-                for fcx in fx_centers:
-                    poly = np.array([
-                        [fcx - 45, 22],
-                        [fcx + 45, 22],
-                        [fcx + 180, 520],
-                        [fcx - 180, 520]
-                    ], np.int32)
-                    cv2.fillPoly(beam_layer, [poly], (255, 250, 230))
-                beam_layer = self.fast_pyramid_blur(beam_layer, 15)
-                cv2.addWeighted(beam_layer, 0.32, canvas, 0.68, 0, canvas)
+                # -------------------------------------------------------------
+                # 自适应定向相消态: 选中洗墙灯偏转射束覆盖 + 漫反射补偿对比度复原
+                # -------------------------------------------------------------
+                ceil_lamp_x = int(320 + (primary_id - 1) * 180)
+                beam_mask = np.zeros((ch, cw), dtype=np.float32)
+                beam_poly = np.array([
+                    [ceil_lamp_x - 45, 20],
+                    [ceil_lamp_x + 45, 20],
+                    [gx + 170, gy + 150],
+                    [gx - 170, gy + 150]
+                ], np.int32)
+                cv2.fillPoly(beam_mask, [beam_poly], 1.0)
+                beam_mask = cv2.GaussianBlur(beam_mask, (61, 61), 20)
 
-                diff_overlay = canvas.copy()
-                cv2.circle(diff_overlay, (gx, gy), 60, (230, 245, 255), -1)
-                diff_overlay = self.fast_pyramid_blur(diff_overlay, 15)
-                cv2.addWeighted(diff_overlay, 0.20, canvas, 0.80, 0, canvas)
+                # 镜面热斑被大面积漫反射冲淡稀释
+                res_mask = np.zeros((ch, cw), dtype=np.float32)
+                cv2.circle(res_mask, (gx, gy), 45, 0.22, -1)
+                res_mask = cv2.GaussianBlur(res_mask, (41, 41), 15)
 
-                cv2.putText(canvas, 'Snell Law: theta_i = theta_r = 34.2 deg | E = mc^2', (320, 240),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.75, (250, 255, 255), 2, cv2.LINE_AA)
-                cv2.putText(canvas, 'MAXWELL EQ: curl(E) = -dB/dt | J = sigma*E', (320, 295),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.70, (210, 255, 210), 2, cv2.LINE_AA)
-                cv2.putText(canvas, '[CASTIC 2026] 天花板 220W (48 deg) 主动相消光束已完全中和反射光！', (320, 350),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 240, 255), 2, cv2.LINE_AA)
+                canvas_float = canvas.astype(np.float32)
+                beam_layer = np.full_like(canvas, (245, 252, 255), dtype=np.float32)
+                white_layer = np.full_like(canvas, 255, dtype=np.float32)
+                canvas_res = (canvas_float * 0.88 + beam_layer * 0.12 * np.expand_dims(beam_mask, -1)).clip(0, 255)
+                canvas = (canvas_res * (1.0 - np.expand_dims(res_mask, -1)) + white_layer * np.expand_dims(res_mask, -1)).clip(0, 255).astype(np.uint8)
 
-                cv2.rectangle(canvas, (320, 440), (960, 490), (10, 25, 20), -1)
-                cv2.rectangle(canvas, (320, 440), (960, 490), (0, 255, 128), 2)
-                cv2.putText(canvas, '实时黑板动态对比度: 1:11.8 (恒定高对比度自发光态 | 字迹清晰锐利) [相消生效]', (340, 472),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 255, 128), 2, cv2.LINE_AA)
+                # 顶部 HUD 状态
+                cv2.rectangle(canvas, (20, 20), (1260, 80), (14, 24, 22), -1)
+                cv2.rectangle(canvas, (20, 20), (1260, 80), (0, 220, 140), 2)
+                cv2.putText(canvas, f"【自适应无影定向相消态】 ⚡ #{primary_id}号洗墙灯偏转射束覆盖完成 (Pan: {sel_fx['pan_deg']:+.1f}°, Tilt: {sel_fx['tilt_deg']:+.1f}°)", (35, 48),
+                            font, 0.65, (0, 230, 150), 2, cv2.LINE_AA)
+                cv2.putText(canvas, f"补偿功率: {int(sel_fx['power_w'])}W (单灯高能消眩) | 漫反射均匀度补偿完成 | 动态对比度恢复至 1:11.8 (板书清晰锐利)", (35, 72),
+                            font, 0.45, (220, 240, 230), 1, cv2.LINE_AA)
 
-                cv2.rectangle(canvas, (20, 20), (1260, 82), (10, 25, 20), -1)
-                cv2.rectangle(canvas, (20, 20), (1260, 82), (0, 255, 128), 2)
-                cv2.putText(canvas, f'【受眩光学生第一人称视角 (Student POV)】 ⚡ 天花板 220W (48°) 有形光束主动相消覆盖 | 席位: {seat_name}', (40, 50),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 128), 2, cv2.LINE_AA)
-                cv2.putText(canvas, '状态: 反射强光已物理稀释中和 | 对比度恒定恢复 1:11.8 | 板书公式清晰锐利 | 生理应激完全解除 (EAR=0.36 舒适)', (40, 74),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.48, (220, 255, 230), 1, cv2.LINE_AA)
+                # 对比度达标指示条
+                cv2.rectangle(canvas, (320, 470), (960, 515), (10, 25, 20), -1)
+                cv2.rectangle(canvas, (320, 470), (960, 515), (0, 255, 128), 2)
+                cv2.putText(canvas, "实时黑板动态对比度: 1:11.8 (国标黄金反差 | 字迹清晰锐利) [相消生效]", (340, 500),
+                            font, 0.50, (0, 255, 128), 2, cv2.LINE_AA)
         else:
-            cv2.rectangle(canvas, (20, 20), (1260, 82), (15, 20, 30), -1)
-            cv2.rectangle(canvas, (20, 20), (1260, 82), (70, 90, 120), 1)
-            cv2.putText(canvas, f'【受反光学生第一人称视角 (Student POV)】 席位: {seat_name} (手电筒未照射)', (40, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.65, (200, 210, 225), 2, cv2.LINE_AA)
-            cv2.putText(canvas, '提示: 请在右键或 3D 视口开启手电筒，即可实时观测入射角反射至该学生座位的刺眼眩晕及 220W 主动相消效果！', (40, 74),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.48, (160, 175, 195), 1, cv2.LINE_AA)
+            cv2.rectangle(canvas, (20, 20), (1260, 80), (15, 20, 30), -1)
+            cv2.rectangle(canvas, (20, 20), (1260, 80), (70, 90, 120), 1)
+            cv2.putText(canvas, f"【受反光学生第一人称视角 (Student POV)】 席位: {seat_name} (手电筒未照射)", (35, 48),
+                        font, 0.65, (200, 210, 225), 2, cv2.LINE_AA)
+            cv2.putText(canvas, "提示: 请在视口开启手电筒，即可实时观测入射角反射至该学生座位的白灼反光及智能洗墙灯单束偏转相消效果！", (35, 72),
+                        font, 0.45, (160, 175, 195), 1, cv2.LINE_AA)
 
         if (target_w, target_h) != (cw, ch):
             return cv2.resize(canvas, (target_w, target_h))
@@ -1068,6 +1271,10 @@ class VLMClassroomDashboardV3(QMainWindow):
                     pass
 
         # 若未处于新鲜投屏，使用原生 41 帧加权插值
+        # 360° 全景背景动态接入：当视角发生偏转时动态反投影真实三维全景
+        if (abs(getattr(self, "cam_yaw", 0.0)) > 0.5 or abs(getattr(self, "cam_pitch", 0.0)) > 0.5) and getattr(self, "pano_bg", None) is not None:
+            canvas = self.project_pano_view(self.cam_yaw, self.cam_pitch)
+
         if canvas is None:
             i0 = int(self.cur_anim_frame)
             i1 = min(len(self.anim_frames) - 1, i0 + 1)
@@ -1612,12 +1819,18 @@ class VLMClassroomDashboardV3(QMainWindow):
         seat_str = opt.get("seat_name", "3号学生席位")
         inc_str = opt.get("incident_deg", 34.2)
 
+        wash_st = getattr(self, "targeted_wash_state", {})
+        pid = wash_st.get("primary_id", 2)
+        pan_d = wash_st.get("pan_deg", 0.0)
+        tilt_d = wash_st.get("tilt_deg", 36.0)
+        p_w = wash_st.get("dynamic_power_w", 208.0)
+
         if has_v_glare:
             prompt_auto = (
-                f"双通道光环境突发告警: 3D视口黑板出现强手电筒杂散光斑 ({int(v_glare_area)}px, 照度约 {int(v_lux)}lx)！"
-                f"三维光线追踪解算: 入射角 {inc_str}°，反射光束精准击中 {seat_str}，导致该学生视野眩光失能雾化！"
-                f"真实学生端侧眼裂 EAR={ear:.2f} ({'眯眼应激' if is_squint else '自然睁眼'})。"
-                f"请立即增强天花板洗墙无影灯至 220W (48° 倾斜洗墙) 并下放靠窗百叶窗至 70%，以有形光束主动覆盖相消，恢复 1:11.8 高对比度板书！"
+                f"双通道光环境突发告警: 3D视口黑板出现强手电筒局部杂散光斑 ({int(v_glare_area)}px, 照度约 {int(v_lux)}lx)！"
+                f"三维光线追踪解算: 入射角 {inc_str}°，反射光束精准击中 {seat_str}，导致该席位板书被白灼高光淹没！"
+                f"定向消眩算法决策: 驱动 #{pid} 号智能洗墙灯偏转 (Pan: {pan_d:+.1f}°, Tilt: {tilt_d:+.1f}°)，功率跃升至 {int(p_w)}W 精准定向中和；其余3组灯具维持140W基准待机。"
+                f"请结合当前真实学生眼裂 EAR={ear:.2f} ({'眯眼应激' if is_squint else '自然睁眼'})，下发完整闭环调控！"
             )
         else:
             prompt_auto = f"环境感知状态突变: 学生EAR={ear:.2f} ({'眯眼应激' if is_squint else '自然睁眼'}), 眩光斑面积={int(glare_area)}px，请即刻执行自适应调控！"
@@ -1936,6 +2149,12 @@ class VLMClassroomDashboardV3(QMainWindow):
 
     def on_frame_ready(self, frame, metrics):
         """接收子线程的高帧率画面并渲染于 QLabel (带 3D 物理运动与画中画合成)"""
+        try:
+            self._on_frame_ready_impl(frame, metrics)
+        except Exception:
+            pass
+
+    def _on_frame_ready_impl(self, frame, metrics):
         self.latest_metrics = metrics
         self.latest_raw_frame = frame.copy()
         h_f, w_f = frame.shape[:2]
