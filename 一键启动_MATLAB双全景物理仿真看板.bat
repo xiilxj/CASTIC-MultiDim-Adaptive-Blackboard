@@ -1,30 +1,58 @@
 @echo off
-@chcp 65001 >nul
-title å…‰è¡¡ GH-VI-2026: MATLAB åŒå…¨æ™¯ç‰©ç†ä»¿çœŸçœ‹æ¿å¯åŠ¨å™¨
+rem ==============================================================================
+rem  GH-VI-2026: MATLAB Dual Dashboard One-Click Launcher (GBK Windows Native)
+rem ==============================================================================
+title ¹âºâ (GH-VI-2026) MATLAB Ë«È«¾°ÎïÀí·ÂÕæ¿´°åÆô¶¯Æ÷
 color 0b
 
 echo ================================================================================
-echo   â˜… å…‰è¡¡ (GH-VI-2026) MATLAB R2025b åŒå…¨æ™¯ç‰©ç†ä»¿çœŸçœ‹æ¿ä¸€é”®æ‹‰èµ·ä¸­æ¢ â˜…
-echo   å…¨å›½é’å°‘å¹´ç§‘æŠ€åˆ›æ–°å¤§èµ› (CASTIC) å‚èµ›é‡ç‚¹å·¥ç¨‹ Â· ç‰©ç†ä¸å·¥ç¨‹å­¦ä¸“é¡¹
+echo   [¹âºâ GH-VI-2026] MATLAB R2025b Ë«È«¾°ÎïÀí·ÂÕæ¿´°åÒ»¼üÆô¶¯ÖĞÊà
+echo   È«¹úÇàÉÙÄê¿Æ¼¼´´ĞÂ´óÈü (CASTIC) ²ÎÈüÖØµã¹¤³Ì ¡¤ ÎïÀíÓë¹¤³ÌÑ§×¨Ïî
 echo ================================================================================
 echo.
-echo  æ­£åœ¨å®šä½å·¥ä½œç›®å½•...
-set "SIM_DIR=D:\Desktop\CASTICpjhb\05-ä¸‰ç»´å»ºæ¨¡ä¸Blenderæ¸²æŸ“\vlm_control"
-cd /d "%SIM_DIR%"
 
-echo  æ­£åœ¨è°ƒç”¨ MATLAB R2025b å¼•æ“æ‰§è¡Œä¸¤å¤§æ ¸å¿ƒä»¿çœŸç¨‹åºï¼š
-echo    [1/2] castic_unified_equation_simulation.m (ç‰©ç†å…‰å­¦ä¸äººå› æ„ŸçŸ¥å¤§ä¸€ç»Ÿå››åˆ†å±çœ‹æ¿)
-echo    [2/2] castic_live_demo_runner.m            (ç©ºé—´é€†è¿åŠ¨å­¦ä¸å…¨å¤©åŠ¨æ€é‡‡å…‰å…­åˆ†å±çœ‹æ¿)
+set "TARGET_DIR=D:\Desktop\CASTICpjhb\05-ÈıÎ¬½¨Ä£ÓëBlenderäÖÈ¾\vlm_control"
+cd /d "%TARGET_DIR%"
+
+set "MATLAB_BIN="
+if exist "D:\Program Files\MATLAB\R2025b\bin\matlab.exe" (
+    set "MATLAB_BIN=D:\Program Files\MATLAB\R2025b\bin\matlab.exe"
+    goto :RunMatlab
+)
+if exist "C:\Program Files\MATLAB\R2025b\bin\matlab.exe" (
+    set "MATLAB_BIN=C:\Program Files\MATLAB\R2025b\bin\matlab.exe"
+    goto :RunMatlab
+)
+for /f "delims=" %%I in ('where matlab.exe 2^>nul') do (
+    set "MATLAB_BIN=%%I"
+    goto :RunMatlab
+)
+goto :NoMatlab
+
+:RunMatlab
+echo  [³É¹¦¶¨Î»] ·¢ÏÖ MATLAB ¿ÉÖ´ĞĞÒıÇæ:
+echo  "%MATLAB_BIN%"
 echo.
+echo  ÕıÔÚÀ­ÆğÁ½´óºËĞÄ·ÂÕæ¿´°å£º
+echo    1. castic_unified_equation_simulation.m [Æ«Î¢»ı·Ö´óÒ»Í³ÀíÂÛ 4 ·ÖÆÁ¿´°å]
+echo    2. castic_live_demo_runner.m            [ÎïÀí¹âÑ§Óë¿Õ¼äÄæÔË¶¯Ñ§ 6 ·ÖÆÁÈ«¾°¿´°å]
+echo.
+start "" "%MATLAB_BIN%" -nosplash -r "try, cd('%TARGET_DIR%'); castic_unified_equation_simulation; castic_live_demo_runner; catch ME, disp(ME.message); end"
+echo  [×´Ì¬] MATLAB ·ÂÕæ¼ÆËãÒÑÅÉ·¢£¬ÕıÔÚ»æÖÆ²¢µ¯³ö½»»¥ Figure ´°¿Ú£¡
+goto :Done
 
-start "" matlab -nosplash -r "try, cd('D:\Desktop\CASTICpjhb\05-ä¸‰ç»´å»ºæ¨¡ä¸Blenderæ¸²æŸ“\vlm_control'); castic_unified_equation_simulation; castic_live_demo_runner; fprintf('\n================================================================================\n  â˜… åŒå…¨æ™¯ç§‘ç ”çœ‹æ¿å·²å…¨éƒ¨æˆåŠŸç»˜åˆ¶å¹¶å¼¹å‡ºï¼è¯·æŸ¥çœ‹æ¡Œé¢äº¤äº’ Figure çª—å£ â˜…\n================================================================================\n'); catch ME, disp(ME.message); end"
+:NoMatlab
+echo  [ÌáÊ¾] Î´ÔÚÄ¬ÈÏÂ·¾¶ÕÒµ½ matlab.exe¡£
+echo  Èô MATLAB ÒÑÔÚÔËĞĞ£¬ÇëÖ±½ÓÔÚ MATLAB ÃüÁîĞĞ´°¿ÚÕ³ÌùÔËĞĞÏÂ·½ÃüÁî£º
+goto :Done
 
+:Done
+echo.
 echo ================================================================================
-echo  [æˆåŠŸæ´¾å‘] MATLAB ä»¿çœŸä¸»è¿›ç¨‹å·²å¯åŠ¨ï¼Œä¸¤ä¸ªäº¤äº’å¼ç§‘ç ” Figure è§†çª—æ­£åœ¨å¼¹å‡ºï¼
-echo  
-echo  è‹¥å·²æ‰“å¼€ MATLAB çª—å£ï¼Œäº¦å¯åœ¨ MATLAB å‘½ä»¤è¡Œç›´æ¥é»è´´ä»¥ä¸‹ä¸¤è¡Œè¿è¡Œï¼š
-echo    cd('D:\Desktop\CASTICpjhb\05-ä¸‰ç»´å»ºæ¨¡ä¸Blenderæ¸²æŸ“\vlm_control');
-echo    castic_unified_equation_simulation; castic_live_demo_runner;
+echo  ¡¾¼«¼ò±¸ÓÃ·½°¸£ºÖ±½ÓÔÚÒÑ´ò¿ªµÄ MATLAB ÃüÁîĞĞÕ³ÌùÔËĞĞ¡¿
+echo.
+echo  cd('D:\Desktop\CASTICpjhb\05-ÈıÎ¬½¨Ä£ÓëBlenderäÖÈ¾\vlm_control'); castic_unified_equation_simulation; castic_live_demo_runner;
+echo.
 echo ================================================================================
 echo.
 pause
