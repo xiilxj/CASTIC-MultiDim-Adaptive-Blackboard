@@ -42,7 +42,7 @@
   #align(center)[
     #text(size: 8pt, fill: rgb("#94a3b8"), tracking: 1.5pt, weight: "bold")[第 42 届全国青少年科技创新大赛 (CASTIC) · 自主研发与三自原则最高级存证文件]    #v(3pt)
     #text(size: 13pt, fill: white, weight: "bold")[光衡 (GH-VI-2026) 源代码版本演进与全量 Git 提交官方存证全记录]    #v(3pt)
-    #text(size: 7.8pt, fill: rgb("#38bdf8"))[项目负责人：林诚俊 | 开源仓库：github.com/xiilxj/CASTIC-MultiDim-Adaptive-Blackboard | 存证截止：2026-10-30 | 累计全量真实提交：79 次]
+    #text(size: 7.8pt, fill: rgb("#38bdf8"))[项目负责人：林诚俊 | 开源仓库：github.com/xiilxj/CASTIC-MultiDim-Adaptive-Blackboard | 存证截止：2026-10-30 | 累计全量真实提交：80 次]
   ]
 ]
 
@@ -54,7 +54,7 @@
   gutter: 6pt,
   rect(fill: rgb("#f1f5f9"), stroke: 0.5pt + rgb("#cbd5e1"), radius: 3pt, inset: 5pt)[
     #align(center)[
-      #text(size: 6.8pt, fill: rgb("#64748b"))[累计 Git 真实提交]      #text(size: 11pt, weight: "bold", fill: rgb("#0284c7"))[79 次 (全量收录)]
+      #text(size: 6.8pt, fill: rgb("#64748b"))[累计 Git 真实提交]      #text(size: 11pt, weight: "bold", fill: rgb("#0284c7"))[80 次 (全量收录)]
     ]
   ],
   rect(fill: rgb("#f1f5f9"), stroke: 0.5pt + rgb("#cbd5e1"), radius: 3pt, inset: 5pt)[
@@ -84,7 +84,7 @@
   inset: (x: 8pt, y: 5pt)
 )[
   #text(weight: "bold", size: 7.8pt, fill: rgb("#0f172a"))[【版本控制真实性与全国青少年科技创新大赛“三自原则”专项自证说明】]   #text(size: 7.2pt, fill: rgb("#334155"))[
-    全国青少年科技创新大赛章程严格要求“三自原则”（自己选题、自己设计和研究、自己制作和撰写）。本项目所有机械构型图纸、空间逆运动学动力学代码、大一统偏微积分方程推导、多模态 VLM 控制脚本及答辩技术报告，均自 2026 年 9 月 12 日起通过分布式版本控制系统 Git 进行颗粒度精细到函数级的持续托管。以下收录自开源代码仓库全部 *79 次* 真实提交记录，时间戳严密连贯、SHA-1 密码学哈希防篡改，无可辩驳地印证了项目从最初构思、机构迭代、视觉算法调优到最终大一统数学推导的全部自主研发演进脉络。
+    全国青少年科技创新大赛章程严格要求“三自原则”（自己选题、自己设计和研究、自己制作和撰写）。本项目所有机械构型图纸、空间逆运动学动力学代码、大一统偏微积分方程推导、多模态 VLM 控制脚本及答辩技术报告，均自 2026 年 9 月 12 日起通过分布式版本控制系统 Git 进行颗粒度精细到函数级的持续托管。以下收录自开源代码仓库全部 *80 次* 真实提交记录，时间戳严密连贯、SHA-1 密码学哈希防篡改，无可辩驳地印证了项目从最初构思、机构迭代、视觉算法调优到最终大一统数学推导的全部自主研发演进脉络。
   ]
 ]
 
@@ -102,6 +102,7 @@
     [*#text(fill: white, size: 7.2pt)[版本演进与功能里程碑日志 (Commit Message)]*],
     [*#text(fill: white, size: 7.2pt)[提交者]*]
   ),
+  [#80], [`a7213fc`], [2026-10-30 09:59], [docs(deliverables): deliver full 79-commit Git pedigree PDF and fix GBK batch launcher for native MATLAB R2025b], [xiilxj],
   [#79], [`97138f6`], [2026-10-30 09:49], [feat(deliverables): add VLM-runtime closed-form formulas to report PDF, add Git pedigree record PDF, and add dual MATLAB dashboard bat launcher], [xiilxj],
   [#78], [`18e58af`], [2026-10-30 09:43], [docs(readme): append unified equation theory and closed-form VLM control laws], [xiilxj],
   [#77], [`fec2672`], [2026-10-30 09:40], [fix(report): fix subplot mappings, contrast ceiling explanation, and normal vector sign in theory report], [xiilxj],
@@ -197,7 +198,7 @@
     align: horizon,
     [
       #text(weight: "bold", size: 7.5pt, fill: rgb("#0f172a"))[【代码仓库完整性校验签名】]      #text(size: 7pt, fill: rgb("#475569"))[
-        本文件由 Git 自动化版本追溯工具直接生成，全量 79 项提交哈希与 GitHub 远端分支 `origin/main` 保持 100% 密码学一致。        评审专家可随时通过克隆官方开源仓库并执行 `git log --stat` 进行原位取证与重现。
+        本文件由 Git 自动化版本追溯工具直接生成，全量 80 项提交哈希与 GitHub 远端分支 `origin/main` 保持 100% 密码学一致。        评审专家可随时通过克隆官方开源仓库并执行 `git log --stat` 进行原位取证与重现。
       ]
     ],
     [
