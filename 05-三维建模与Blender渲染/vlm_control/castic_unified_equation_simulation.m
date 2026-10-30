@@ -109,9 +109,9 @@ function results = castic_unified_equation_simulation(custom_config)
 
     %% 4. 生成多维综合可视化仪表盘 (1920x1080 300DPI)
     fprintf('[3/5] 渲染生成 4-in-1 高清科学可视化仪表盘...\n');
-    fig = figure('Name', 'CASTIC 2026 GH-VI-2026 Unified Simulation Dashboard', ...
+    fig = figure('Name', '【CASTIC 2026】光衡 GH-VI-2026: 大一统偏微分-积分方程物理光学数值仿真看板 (4-in-1)', ...
                  'NumberTitle', 'off', 'Color', [1 1 1], 'Position', [50, 50, 1920, 1080], ...
-                 'Visible', 'off');
+                 'Visible', 'on');
 
     % 子图 1: 黑板表面光照度分布云图 (Case B 相消态)
     ax1 = subplot(2, 2, 1);
@@ -177,7 +177,8 @@ function results = castic_unified_equation_simulation(custom_config)
     out_png = fullfile(fileparts(mfilename('fullpath')), 'castic_unified_simulation_dashboard.png');
     exportgraphics(fig, out_png, 'Resolution', 300);
     fprintf('  -> 仪表盘图像导出成功: %s\n', out_png);
-    close(fig);
+    drawnow;
+    figure(fig); % 保持看板在宿主机屏幕前置展示交互
 
     %% 5. 保存仿真数据集与构建返回结构体
     fprintf('[4/5] 打包保存离散仿真数据集 .mat 格式...\n');
