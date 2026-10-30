@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光衡 GH-VI-2026 多维叠合翻转智能黑板系统 - 3D 机械运动学仿真</title>
+    <!-- 本地离线 Three.js 引擎与 OrbitControls (支持赛场零网络离线秒级载入) -->
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-glass: rgba(15, 23, 42, 0.78);
+            --border-glass: rgba(148, 163, 184, 0.22);
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --accent-orange: #f97316;
+            --accent-green: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: #0f172a;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* 顶部项目标题栏 */
+        .top-header {
+            position: absolute;
+            top: 20px;
+            left: 24px;
+            z-index: 10;
+            background: var(--bg-glass);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border-glass);
+            border-left: 4px solid var(--accent-cyan);
+            border-radius: 12px;
+            padding: 14px 22px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+            pointer-events: auto;
+        }
+
+        .top-header .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.15);
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+
+        .top-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .top-header p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* 右上角视角预设工具栏 */
+        .camera-bar {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            z-index: 10;
+            background: var(--bg-glass);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        .camera-bar span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-right: 4px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 7px 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn:hover {
+            background: rgba(6, 182, 212, 0.22);
+            border-color: var(--accent-cyan);
+            transform: translateY(-1px);
+        }
+
+        .btn.active {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-color: transparent;
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);
+        }
+
+        /* 左侧实时运动学遥测面板 */
+        .telemetry-panel {
+            position: absolute;
+            top: 130px;
+            left: 24px;
+            width: 310px;
+            z-index: 10;
+            background: var(--bg-glass);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 16px 18px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            display: inline-block;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .metric-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .metric-card.full-width {
+            grid-column: span 2;
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.14), rgba(59, 130, 246, 0.08));
+            border-color: rgba(6, 182, 212, 0.35);
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: "JetBrains Mono", Consolas, monospace;
+            color: #ffffff;
+        }
+
+        .metric-value.highlight {
+            font-size: 23px;
+            color: var(--accent-cyan);
+        }
+
+        .metric-unit {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: 3px;
+        }
+
+        .narration-box {
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid rgba(249, 115, 22, 0.35);
+            border-left: 3px solid var(--accent-orange);
+            border-radius: 8px;
+            padding: 11px 12px;
+        }
+
+        .narration-stage {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent-orange);
+            margin-bottom: 5px;
+        }
+
+        .narration-desc {
+            font-size: 12.5px;
+            line-height: 1.55;
+            color: #e2e8f0;
+        }
+
+        /* 底部中央主控时间轴面板 */
+        .bottom-hud {
+            position: absolute;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(940px, 94vw);
+            z-index: 10;
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 16px 22px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* 5个阶段快速跳转按钮 */
+        .stage-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .stage-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 8px 6px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .stage-btn:hover {
+            background: rgba(6, 182, 212, 0.18);
+            border-color: var(--accent-cyan);
+        }
+
+        .stage-btn.active {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.32), rgba(59, 130, 246, 0.32));
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);
+        }
+
+        .stage-btn .t-tag {
+            display: block;
+            font-size: 10px;
+            font-family: monospace;
+            color: var(--accent-cyan);
+            margin-bottom: 2px;
+        }
+
+        .stage-btn .s-name {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* 播放控制与无级滑块行 */
+        .timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .play-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4);
+            transition: transform 0.15s ease;
+            flex-shrink: 0;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .slider-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.14);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+            cursor: grab;
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.18);
+        }
+
+        .speed-group {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .speed-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 900px) {
+            .telemetry-panel {
+                width: 260px;
+                top: 120px;
+            }
+            .stage-buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D 渲染容器 -->
+    <div id="canvas-container"></div>
+
+    <!-- 左上角项目铭牌 -->
+    <div class="top-header">
+        <div class="badge">第 42 届全国青少年科技创新大赛 · 工程学项目</div>
+        <h1>光衡 GH-VI-2026 多维叠合翻转智能黑板系统</h1>
+        <p>Blender 5.0 实测机械运动学拓扑 · 4000mm ⇄ 8000mm 无柱全景展开仿真</p>
+    </div>
+
+    <!-- 右上角视角预设导航 -->
+    <div class="camera-bar">
+        <span>摄像机视角:</span>
+        <button class="btn active" onclick="setCameraPreset('front', this)">正视全景</button>
+        <button class="btn" onclick="setCameraPreset('bird', this)">45° 鸟瞰特写</button>
+        <button class="btn" onclick="setCameraPreset('student', this)">学生第一人称</button>
+        <button class="btn" onclick="setCameraPreset('hinge', this)">铰链与卡爪细节</button>
+    </div>
+
+    <!-- 左侧实时机械运动学监视器 -->
+    <div class="telemetry-panel">
+        <div class="panel-title">
+            <span>实时机构动力学遥测</span>
+            <span class="status-dot" id="status-dot"></span>
+        </div>
+
+        <div class="metric-grid">
+            <div class="metric-card full-width">
+                <div class="metric-label">当前系统有效展宽 (TOTAL SPAN)</div>
+                <div class="metric-value highlight"><span id="val-span">4000</span><span class="metric-unit">mm</span></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">外侧铰链偏航角 (YAW)</div>
+                <div class="metric-value"><span id="val-yaw">0.0</span><span class="metric-unit">°</span></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">衍生套杆伸出量</div>
+                <div class="metric-value"><span id="val-ext">1000</span><span class="metric-unit">mm</span></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">双层主板中心 |X|</div>
+                <div class="metric-value"><span id="val-board-x">500</span><span class="metric-unit">mm</span></div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">前板翻折补缺角 (θ)</div>
+                <div class="metric-value"><span id="val-fold">0.0</span><span class="metric-unit">°</span></div>
+            </div>
+        </div>
+
+        <div class="narration-box">
+            <div class="narration-stage" id="narration-title">阶段一初：完全遮蔽形态 (COVERED 4000mm)</div>
+            <div class="narration-desc" id="narration-desc">
+                左右伸缩衍生杆向中央 X=0.0m 对接，双层叠合黑板保持紧密贴合向中心靠拢闭合，100% 严密保护并遮蔽中央 86 寸智能大屏，呈现 4.0m 纯平墨绿书写面。
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部中央 HUD 控制台 -->
+    <div class="bottom-hud">
+        <div class="stage-buttons">
+            <button class="stage-btn active" id="stage-btn-0" onclick="jumpToProgress(0.00)">
+                <span class="t-tag">t = 0.00</span>
+                <span class="s-name">阶段一初: 完全封屏</span>
+            </button>
+            <button class="stage-btn" id="stage-btn-1" onclick="jumpToProgress(0.30)">
+                <span class="t-tag">t = 0.30</span>
+                <span class="s-name">阶段一末: 退回露屏</span>
+            </button>
+            <button class="stage-btn" id="stage-btn-2" onclick="jumpToProgress(0.50)">
+                <span class="t-tag">t = 0.50</span>
+                <span class="s-name">阶段二: 整体外翻 180°</span>
+            </button>
+            <button class="stage-btn" id="stage-btn-3" onclick="jumpToProgress(0.70)">
+                <span class="t-tag">t = 0.70</span>
+                <span class="s-name">阶段三: 套杆外伸 +1m</span>
+            </button>
+            <button class="stage-btn" id="stage-btn-4" onclick="jumpToProgress(1.00)">
+                <span class="t-tag">t = 1.00</span>
+                <span class="s-name">阶段四: 外滑补缺(8m巨幕)</span>
+            </button>
+        </div>
+
+        <div class="timeline-controls">
+            <button class="play-btn" id="play-pause-btn" onclick="togglePlay()" title="播放/暂停自动巡航">
+                ▶
+            </button>
+
+            <div class="slider-wrapper">
+                <div class="slider-labels">
+                    <span>0.00 (封屏 4m)</span>
+                    <span>0.30 (露屏)</span>
+                    <span>0.50 (外翻180°)</span>
+                    <span>0.70 (伸杆)</span>
+                    <span>0.85 (外滑锁定)</span>
+                    <span id="progress-readout" style="color: var(--accent-cyan); font-weight: bold;">t = 0.000 (0%)</span>
+                </div>
+                <input type="range" id="timeline-slider" min="0" max="1" step="0.001" value="0">
+            </div>
+
+            <div class="speed-group">
+                <button class="btn speed-btn" onclick="setSpeed(0.5, this)">0.5x</button>
+                <button class="btn speed-btn active" onclick="setSpeed(1.0, this)">1.0x</button>
+                <button class="btn speed-btn" onclick="setSpeed(2.0, this)">2.0x</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // 一、 全局状态与数学缓动工具函数
+        // ============================================================================
+        let currentProgress = 0.0;      // 当前运动学进度 t ∈ [0.00, 1.00]
+        let targetProgress = null;      // 定点平滑跳转目标进度
+        let isPlaying = false;          // 是否处于自动巡航播放
+        let playSpeed = 1.0;            // 播放倍率
+        let playDirection = 1;          // 巡航方向
+
+        // 标准 3 阶 Smoothstep S-Curve 缓动函数
+        function smoothstep(edge0, edge1, x) {
+            const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+            return t * t * (3 - 2 * t);
+        }
+
+        // 更柔和的 5 阶 Quintic S-Curve 缓动
+        function smootherstep(edge0, edge1, x) {
+            const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+            return t * t * t * (t * (t * 6 - 15) + 10);
+        }
+
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        // ============================================================================
+        // 二、 Three.js 场景、相机、渲染器与灯光初始化
+        // ============================================================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x162032);
+        scene.fog = new THREE.FogExp2(0x162032, 0.032);
+
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 1.85, 8.2);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 1.45, 0);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.maxPolarAngle = Math.PI / 2 + 0.04; // 防止钻入地板下方
+        controls.minDistance = 1.2;
+        controls.maxDistance = 18;
+
+        // 灯光配置
+        const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.65);
+        scene.add(ambientLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 0.45);
+        hemiLight.position.set(0, 6, 0);
+        scene.add(hemiLight);
+
+        const mainDirLight = new THREE.DirectionalLight(0xfffbeb, 1.05);
+        mainDirLight.position.set(4.5, 6.5, 6.5);
+        mainDirLight.castShadow = true;
+        mainDirLight.shadow.mapSize.width = 2048;
+        mainDirLight.shadow.mapSize.height = 2048;
+        mainDirLight.shadow.camera.near = 1;
+        mainDirLight.shadow.camera.far = 20;
+        mainDirLight.shadow.camera.left = -6.5;
+        mainDirLight.shadow.camera.right = 6.5;
+        mainDirLight.shadow.camera.top = 4.5;
+        mainDirLight.shadow.camera.bottom = -1.5;
+        mainDirLight.shadow.bias = -0.0005;
+        scene.add(mainDirLight);
+
+        const fillDirLight = new THREE.DirectionalLight(0x93c5fd, 0.4);
+        fillDirLight.position.set(-5, 3, 4);
+        scene.add(fillDirLight);
+
+        // ============================================================================
+        // 三、 工业级 PBR 材质与动态 Canvas 纹理创建
+        // ============================================================================
+        // 1. 生成哑光墨绿黑板纹理（带细微板书格线与标尺）
+        function createChalkboardTexture(labelText) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // 墨绿基底
+            ctx.fillStyle = '#143829';
+            ctx.fillRect(0, 0, 512, 512);
+
+            // 细微暗纹网格
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.lineWidth = 1;
+            const step = 64;
+            for (let i = step; i < 512; i += step) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
+            }
+
+            // 轻微粉笔擦痕噪点质感
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+            for (let i = 0; i < 120; i++) {
+                ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 45, 2);
+            }
+
+            if (labelText) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+                ctx.font = 'bold 22px "Microsoft YaHei", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(labelText, 256, 260);
+            }
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.encoding = THREE.sRGBEncoding;
+            return tex;
+        }
+
+        // 2. 生成 86 寸智能液晶大屏蓝天科技壁纸纹理
+        function createSmartScreenTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 614;
+            const ctx = canvas.getContext('2d');
+
+            // 蓝天科技渐变背景
+            const grad = ctx.createLinearGradient(0, 0, 0, 614);
+            grad.addColorStop(0, '#0284c7');
+            grad.addColorStop(0.55, '#38bdf8');
+            grad.addColorStop(1, '#e0f2fe');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1024, 614);
+
+            // 远山几何剪影与云层光晕
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+            ctx.beginPath();
+            ctx.arc(820, 150, 90, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.15)';
+            ctx.beginPath();
+            ctx.moveTo(0, 614);
+            ctx.lineTo(0, 460);
+            ctx.lineTo(280, 340);
+            ctx.lineTo(540, 480);
+            ctx.lineTo(820, 310);
+            ctx.lineTo(1024, 430);
+            ctx.lineTo(1024, 614);
+            ctx.closePath();
+            ctx.fill();
+
+            // 智慧教学大屏 UI 卡片
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(140, 110, 744, 360, 20);
+            ctx.fill();
+            ctx.stroke();
+
+            // 屏幕文字信息
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 26px "Segoe UI", "Microsoft YaHei", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('光衡 GH-VI-2026 智慧交互教学终端 (86" UHD)', 512, 185);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 44px "Segoe UI", "Microsoft YaHei", sans-serif';
+            ctx.fillText('多维叠合翻转智能黑板系统', 512, 265);
+
+            ctx.fillStyle = '#bae6fd';
+            ctx.font = '22px "Segoe UI", "Microsoft YaHei", sans-serif';
+            ctx.fillText('2000mm × 1200mm 中置视窗 · 无立柱遮挡 · 4.0m ⇄ 8.0m 全景切換', 512, 330);
+
+            // 底部 Dock 栏示意
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.beginPath();
+            ctx.roundRect(332, 405, 360, 36, 18);
+            ctx.fill();
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.encoding = THREE.sRGBEncoding;
+            return tex;
+        }
+
+        // PBR 材质集合
+        const matChalkboard = new THREE.MeshStandardMaterial({
+            map: createChalkboardTexture(''),
+            roughness: 0.7,
+            metalness: 0.1,
+            side: THREE.DoubleSide
+        });
+
+        const matAluminum = new THREE.MeshStandardMaterial({
+            color: 0xd1d5db,
+            roughness: 0.3,
+            metalness: 0.8
+        });
+
+        const matDarkAnodized = new THREE.MeshStandardMaterial({
+            color: 0x1e293b,
+            roughness: 0.35,
+            metalness: 0.75
+        });
+
+        const matSafetyOrange = new THREE.MeshStandardMaterial({
+            color: 0xf97316,
+            roughness: 0.38,
+            metalness: 0.2,
+            emissive: 0x7c2d12,
+            emissiveIntensity: 0.15
+        });
+
+        const matHingeGold = new THREE.MeshStandardMaterial({
+            color: 0xfbbf24,
+            roughness: 0.25,
+            metalness: 0.85
+        });
+
+        const matScreenGlass = new THREE.MeshStandardMaterial({
+            map: createSmartScreenTexture(),
+            roughness: 0.15,
+            metalness: 0.1,
+            emissive: 0x0284c7,
+            emissiveIntensity: 0.18
+        });
+
+        // ============================================================================
+        // 四、 教室空间环境与墙面基底建模 (严格公制 1 单位 = 1.0m)
+        // ============================================================================
+        const envGroup = new THREE.Group();
+        scene.add(envGroup);
+
+        // 1. 教室主背景墙 (位于 Z = -0.04m，宽 12m，高 4.2m)
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.85, metalness: 0.05 });
+        const wallMesh = new THREE.Mesh(new THREE.BoxGeometry(11.5, 4.2, 0.12), wallMat);
+        wallMesh.position.set(0, 2.1, -0.075);
+        wallMesh.receiveShadow = true;
+        envGroup.add(wallMesh);
+
+        // 墙面顶部与底部装饰护墙板线条
+        const trimMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 });
+        const bottomTrim = new THREE.Mesh(new THREE.BoxGeometry(11.5, 0.12, 0.14), trimMat);
+        bottomTrim.position.set(0, 0.06, -0.07);
+        envGroup.add(bottomTrim);
+
+        // 2. 教室木质地板与讲台地台
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.65, metalness: 0.05 });
+        const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(24, 16), floorMat);
+        floorMesh.rotation.x = -Math.PI / 2;
+        floorMesh.position.y = 0;
+        floorMesh.receiveShadow = true;
+        envGroup.add(floorMesh);
+
+        // 辅助地面网格 (1.0m 标准公制网格)
+        const gridHelper = new THREE.GridHelper(16, 16, 0x38bdf8, 0x475569);
+        gridHelper.position.y = 0.002;
+        gridHelper.material.opacity = 0.25;
+        gridHelper.material.transparent = true;
+        envGroup.add(gridHelper);
+
+        // 米色木质讲台地台 (宽 9.0m，深 1.4m，高 0.14m)
+        const podiumMat = new THREE.MeshStandardMaterial({ color: 0xd6bfa3, roughness: 0.55, metalness: 0.05 });
+        const podiumMesh = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.14, 1.35), podiumMat);
+        podiumMesh.position.set(0, 0.07, 0.65);
+        podiumMesh.receiveShadow = true;
+        podiumMesh.castShadow = true;
+        envGroup.add(podiumMesh);
+
+        // ============================================================================
+        // 五、 墙面固定基底 (Z = 0.00m, 跨度 4000mm, 高 Y ∈ [0.9m, 2.1m])
+        // ============================================================================
+        const fixedBaseGroup = new THREE.Group();
+        scene.add(fixedBaseGroup);
+
+        // 构建带铝合金边框的标准黑板单元辅助函数 (宽 1.0m, 高 1.2m, 厚 0.025m)
+        function createBlackboardPanel(width = 1.0, height = 1.2, thickness = 0.025, borderColorMat = matAluminum) {
+            const group = new THREE.Group();
+
+            // 墨绿板芯 (前后双面均可书写展示)
+            const coreGeo = new THREE.BoxGeometry(width - 0.024, height - 0.024, thickness);
+            const coreMesh = new THREE.Mesh(coreGeo, matChalkboard);
+            coreMesh.castShadow = true;
+            coreMesh.receiveShadow = true;
+            group.add(coreMesh);
+
+            // 四周拉丝铝包边外框
+            const bThick = 0.014;
+            const bDepth = thickness + 0.004;
+            const topBar = new THREE.Mesh(new THREE.BoxGeometry(width, bThick, bDepth), borderColorMat);
+            topBar.position.y = height / 2 - bThick / 2;
+            const botBar = new THREE.Mesh(new THREE.BoxGeometry(width, bThick, bDepth), borderColorMat);
+            botBar.position.y = -height / 2 + bThick / 2;
+            const leftBar = new THREE.Mesh(new THREE.BoxGeometry(bThick, height - bThick * 2, bDepth), borderColorMat);
+            leftBar.position.x = -width / 2 + bThick / 2;
+            const rightBar = new THREE.Mesh(new THREE.BoxGeometry(bThick, height - bThick * 2, bDepth), borderColorMat);
+            rightBar.position.x = width / 2 - bThick / 2;
+
+            group.add(topBar, botBar, leftBar, rightBar);
+            return group;
+        }
+
+        // 1. 左侧固定黑板 (宽 1000mm, 高 1200mm, 厚 25mm, 中心 X = -1.50m, Y = 1.50m, Z = 0.00m)
+        const leftFixedBoard = createBlackboardPanel(1.0, 1.2, 0.025, matAluminum);
+        leftFixedBoard.position.set(-1.50, 1.50, 0.00);
+        fixedBaseGroup.add(leftFixedBoard);
+
+        // 2. 右侧固定黑板 (宽 1000mm, 高 1200mm, 厚 25mm, 中心 X = +1.50m, Y = 1.50m, Z = 0.00m)
+        const rightFixedBoard = createBlackboardPanel(1.0, 1.2, 0.025, matAluminum);
+        rightFixedBoard.position.set(1.50, 1.50, 0.00);
+        fixedBaseGroup.add(rightFixedBoard);
+
+        // 3. 中置 86 寸智能液晶大屏 (宽 2000mm, 高 1200mm, 厚 40mm, 中心 X = 0.00m, Y = 1.50m, Z = 0.00m)
+        const smartScreenGroup = new THREE.Group();
+        smartScreenGroup.position.set(0.00, 1.50, 0.00);
+
+        const screenChassis = new THREE.Mesh(new THREE.BoxGeometry(2.00, 1.20, 0.040), matDarkAnodized);
+        screenChassis.castShadow = true;
+        screenChassis.receiveShadow = true;
+        smartScreenGroup.add(screenChassis);
+
+        const screenDisplay = new THREE.Mesh(new THREE.PlaneGeometry(1.92, 1.12), matScreenGlass);
+        screenDisplay.position.z = 0.021;
+        smartScreenGroup.add(screenDisplay);
+
+        fixedBaseGroup.add(smartScreenGroup);
+
+        // ============================================================================
+        // 六、 前方可动总成 (左右完全镜像对称，初始位于 Z = 0.08m)
+        // ============================================================================
+        /*
+         * 机械运动学局部坐标系设计说明（零穿模核心保证）：
+         * 以右侧总成 (side = +1) 与左侧总成 (side = -1) 为例：
+         * 1. 外侧固定铰链立柱转轴 (SwingRootPivot) 位于世界坐标：
+         *    X = side * 2.00m, Y = 1.50m, Z = 0.08m
+         * 2. 在初始状态 (Yaw = 0°) 下，定义模块内部局部坐标 u ∈ [0, 2.0m] 表示“距离外侧铰链轴 X = ±2.00m 向内侧的距离”：
+         *    即任意局部点 u 在初始状态下的世界 X 坐标为：X_world = side * (2.00 - u)。
+         *    当整个外翻架绕 X = ±2.00m 旋转 180° 后：
+         *    - 右侧模块绕 Y 轴顺时针旋转 -180° (rotation.y = -π)
+         *    - 左侧模块绕 Y 轴逆时针旋转 +180° (rotation.y = +π)
+         *    此时原本向内 (u > 0) 的方向全部反转朝向外侧 (|X| > 2.00m)，且框架从教室前方 (+Z) 优雅掠过！
+         * 3. 最前层可翻折黑板 (FrontBoard) 绕双层黑板靠近大屏侧的内侧竖直铰链翻折 180°：
+         *    在阶段 4 (t = 0.85 ~ 1.00) 时，外翻架已经处于 180° 外翻状态，此时内侧铰链正好位于世界坐标 X = ±3.00m 处。
+         *    为了让最前层黑板从外侧 [±3.0m, ±4.0m] 面向教室前方 (+Z) 画半圆弧翻平至 [±2.0m, ±3.0m]，
+         *    只需让前层黑板绕该铰链旋转 180°（右侧模块局部转角 -π，左侧模块局部转角 +π），其法线全程扫过 +Z 教室空间，绝不向后穿墙！
+         */
+
+        function createMovableAssembly(side) {
+            // side = -1 (左侧总成), side = +1 (右侧总成)
+            const assemblyRoot = new THREE.Group();
+            // 外侧铰链立柱主转轴位于 X = ±2.00m, Y = 1.50m, Z = 0.08m
+            assemblyRoot.position.set(side * 2.00, 1.50, 0.08);
+            scene.add(assemblyRoot);
+
+            // 1. 墙基固定铰链底座支架 (不随旋转轴转动，固定在墙角 X = ±2.00m)
+            const wallAnchorGroup = new THREE.Group();
+            wallAnchorGroup.position.set(side * 2.00, 1.50, 0.04);
+            scene.add(wallAnchorGroup);
+
+            const anchorPillar = new THREE.Mesh(new THREE.BoxGeometry(0.045, 1.28, 0.09), matDarkAnodized);
+            wallAnchorGroup.add(anchorPillar);
+
+            // 上中下三个金色重载工业铰链轴承环
+            [-0.58, 0, 0.58].forEach(yOff => {
+                const knuckle = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.07, 24), matHingeGold);
+                knuckle.position.set(0, yOff, 0.04);
+                wallAnchorGroup.add(knuckle);
+            });
+
+            // 2. 活动金属支撑主框架 (随 assemblyRoot 整体外翻 180°，跨度 1.0m，覆盖局部 u ∈ [0, 1.0m])
+            const mainFrameGroup = new THREE.Group();
+            assemblyRoot.add(mainFrameGroup);
+
+            // 外侧铰链转动立柱
+            const hingePost = new THREE.Mesh(new THREE.BoxGeometry(0.036, 1.26, 0.036), matAluminum);
+            hingePost.position.set(0, 0, 0);
+            mainFrameGroup.add(hingePost);
+
+            // 上下固定导轨外管 (长 1.02m，中心位于局部 x = -side * 0.50m)
+            const outerTubeGeo = new THREE.BoxGeometry(1.02, 0.042, 0.042);
+            const topOuterTube = new THREE.Mesh(outerTubeGeo, matDarkAnodized);
+            topOuterTube.position.set(-side * 0.50, 0.625, 0);
+            const botOuterTube = new THREE.Mesh(outerTubeGeo, matDarkAnodized);
+            botOuterTube.position.set(-side * 0.50, -0.625, 0);
+            mainFrameGroup.add(topOuterTube, botOuterTube);
+
+            // 框架内端连接竖梁 (位于局部 u = 1.0m，即 x = -side * 1.00m)
+            const innerFrameStile = new THREE.Mesh(new THREE.BoxGeometry(0.028, 1.26, 0.030), matDarkAnodized);
+            innerFrameStile.position.set(-side * 1.00, 0, -0.01);
+            mainFrameGroup.add(innerFrameStile);
+
+            // 3. 伸缩衍生套杆与杆端【C 型限位大立柱/卡爪】
+            // 衍生套杆长 1.0m，当 ext ∈ [0, 1.0m] 时，套杆最外端位于 u = 1.0 + ext ∈ [1.0m, 2.0m]
+            const teleRodGroup = new THREE.Group();
+            assemblyRoot.add(teleRodGroup);
+
+            const innerRodGeo = new THREE.BoxGeometry(1.05, 0.028, 0.028);
+            const topInnerRod = new THREE.Mesh(innerRodGeo, matAluminum);
+            topInnerRod.position.set(side * 0.50, 0.625, 0);
+            const botInnerRod = new THREE.Mesh(innerRodGeo, matAluminum);
+            botInnerRod.position.set(side * 0.50, -0.625, 0);
+            teleRodGroup.add(topInnerRod, botInnerRod);
+
+            // 醒目的高辨识度工业安全橙色【C 型限位大立柱与上下卡爪】(位于 teleRodGroup 原点，对应 u = 1.0 + ext)
+            const cClampGroup = new THREE.Group();
+            teleRodGroup.add(cClampGroup);
+
+            // C 型立柱竖直主梁
+            const cSpine = new THREE.Mesh(new THREE.BoxGeometry(0.048, 1.31, 0.075), matSafetyOrange);
+            cSpine.castShadow = true;
+            cClampGroup.add(cSpine);
+
+            // C 型上下包覆限位卡爪臂
+            const cJawTop = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.048, 0.082), matSafetyOrange);
+            cJawTop.position.set(side * 0.04, 0.635, 0);
+            const cJawBot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.048, 0.082), matSafetyOrange);
+            cJawBot.position.set(side * 0.04, -0.635, 0);
+            const cMidLock = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.14, 0.082), matSafetyOrange);
+            cMidLock.position.set(side * 0.025, 0, 0);
+            cClampGroup.add(cJawTop, cJawBot, cMidLock);
+
+            // 4. 双层黑板滑移车组 (CarriageGroup)
+            // 以双层黑板靠近大屏侧的【内侧铰链竖边缘】作为 carriageGroup 的局部原点
+            const carriageGroup = new THREE.Group();
+            assemblyRoot.add(carriageGroup);
+
+            // 4.1 后层承重主黑板 (RearBoard: 宽 1.0m, 高 1.2m, 厚 0.022m)
+            // 在滑车局部坐标系下，后板中心位于 +side * 0.50m
+            const rearBoardMesh = createBlackboardPanel(1.0, 1.2, 0.022, matAluminum);
+            rearBoardMesh.position.set(side * 0.50, 0, -0.013);
+            carriageGroup.add(rearBoardMesh);
+
+            // 滑块导靴细节
+            [-0.85, -0.15].forEach(xRel => {
+                const runnerTop = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.035, 0.04), matHingeGold);
+                runnerTop.position.set(side * (1.0 + xRel), 0.605, -0.005);
+                const runnerBot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.035, 0.04), matHingeGold);
+                runnerBot.position.set(side * (1.0 + xRel), -0.605, -0.005);
+                carriageGroup.add(runnerTop, runnerBot);
+            });
+
+            // 4.2 内侧竖轴铰链组 (位于后板靠中央内侧边缘，即滑车局部 +side * 1.00m 处)
+            // 阶段4外滑后对应世界坐标 X = ±3.00m 断档边界！
+            const innerHingePivot = new THREE.Group();
+            innerHingePivot.position.set(side * 1.00, 0, 0.00);
+            carriageGroup.add(innerHingePivot);
+
+            // 渲染内侧铰链精密转轴圆柱
+            [-0.52, -0.18, 0.18, 0.52].forEach(yPos => {
+                const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.06, 16), matHingeGold);
+                pin.position.set(0, yPos, 0);
+                innerHingePivot.add(pin);
+            });
+
+            // 4.3 最前层可翻折黑板 (FrontBoard: 宽 1.0m, 高 1.2m, 厚 0.022m)
+            // 初始贴合状态下，前板相对于 innerHingePivot 的偏移是 -side * 0.50m (覆盖在后板正前方)
+            // 翻折 180° 后，前板绕铰链向内翻转至 +side * 0.50m (平铺落位于断档缺口 X = ±2.50m 处，完美补缺！)
+            const frontBoardMesh = createBlackboardPanel(1.0, 1.2, 0.022, matAluminum);
+            frontBoardMesh.position.set(-side * 0.50, 0, 0.013);
+            innerHingePivot.add(frontBoardMesh);
+
+            return {
+                side,
+                assemblyRoot,
+                teleRodGroup,
+                carriageGroup,
+                innerHingePivot
+            };
+        }
+
+        const leftModule = createMovableAssembly(-1);
+        const rightModule = createMovableAssembly(1);
+
+        // ============================================================================
+        // 七、 动态半透明尺寸指示标尺 (4000mm -> 8000mm 实时增长)
+        // ============================================================================
+        const rulerGroup = new THREE.Group();
+        rulerGroup.position.set(0, 0.42, 0.25);
+        scene.add(rulerGroup);
+
+        // 标尺横梁
+        const rulerBarMat = new THREE.MeshBasicMaterial({
+            color: 0x06b6d4,
+            transparent: true,
+            opacity: 0.85
+        });
+        const rulerBarMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 0.018, 0.018), rulerBarMat);
+        rulerGroup.add(rulerBarMesh);
+
+        // 左右两端界限竖线
+        const tickGeo = new THREE.BoxGeometry(0.016, 0.22, 0.016);
+        const leftTickMesh = new THREE.Mesh(tickGeo, rulerBarMat);
+        const rightTickMesh = new THREE.Mesh(tickGeo, rulerBarMat);
+        rulerGroup.add(leftTickMesh, rightTickMesh);
+
+        // 动态 Canvas 标尺读数铭牌
+        const rulerCanvas = document.createElement('canvas');
+        rulerCanvas.width = 512;
+        rulerCanvas.height = 128;
+        const rulerCtx = rulerCanvas.getContext('2d');
+        const rulerTex = new THREE.CanvasTexture(rulerCanvas);
+
+        const rulerBadgeMat = new THREE.MeshBasicMaterial({
+            map: rulerTex,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        const rulerBadgeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.35, 0.34), rulerBadgeMat);
+        rulerBadgeMesh.position.set(0, -0.22, 0.02);
+        rulerGroup.add(rulerBadgeMesh);
+
+        let lastDrawnSpan = -1;
+        function updateRulerVisual(spanMeters) {
+            rulerBarMesh.scale.x = spanMeters;
+            leftTickMesh.position.x = -spanMeters / 2;
+            rightTickMesh.position.x = spanMeters / 2;
+
+            const spanMM = Math.round(spanMeters * 1000);
+            if (spanMM !== lastDrawnSpan) {
+                lastDrawnSpan = spanMM;
+                rulerCtx.clearRect(0, 0, 512, 128);
+
+                // 半透明科技背景框
+                rulerCtx.fillStyle = 'rgba(15, 23, 42, 0.86)';
+                rulerCtx.strokeStyle = '#06b6d4';
+                rulerCtx.lineWidth = 4;
+                rulerCtx.beginPath();
+                rulerCtx.roundRect(12, 12, 488, 104, 18);
+                rulerCtx.fill();
+                rulerCtx.stroke();
+
+                rulerCtx.fillStyle = '#38bdf8';
+                rulerCtx.font = 'bold 44px Consolas, monospace';
+                rulerCtx.textAlign = 'center';
+                rulerCtx.textBaseline = 'middle';
+                rulerCtx.fillText(`◀  ${spanMM} mm  ▶`, 256, 64);
+
+                rulerTex.needsUpdate = true;
+            }
+        }
+
+        // ============================================================================
+        // 八、 核心四阶段机械运动学插值引擎 (Blender 5.0 校准时序)
+        // ============================================================================
+        /*
+         * 参数化定义（单侧对称）：
+         * - ext (衍生套杆伸出量, m) ∈ [0.00, 1.00]
+         * - slide (双层黑板沿滑轨向外端滑动位移, m) ∈ [0.00, 1.00]
+         *   当 slide = 0 时，双层黑板处于框架内段 u ∈ [0.00, 1.00]
+         *   当 slide = 1 时，双层黑板滑至衍生杆外端 u ∈ [1.00, 2.00]
+         * - yawDeg (整体绕 X = ±2.00m 外翻偏航角, °) ∈ [0, 180]
+         * - foldDeg (最前层黑板绕内侧铰链向前翻开补缺角, °) ∈ [0, 180]
+         */
+        function evaluateKinematics(t) {
+            let ext = 0.0;
+            let slide = 0.0;
+            let yawDeg = 0.0;
+            let foldDeg = 0.0;
+            let stageIndex = 0;
+            let stageTitle = '';
+            let stageDesc = '';
+
+            if (t <= 0.15) {
+                // ● 阶段 1 初 (0.00 ~ 0.15)：完全遮蔽形态 (COVERED 4000mm)
+                // 为兼容 0.00 起步即可展示伸出闭合或已在中心严密闭合，
+                // 在 [0.00, 0.15] 期间，若从 0 启动，让套杆与双层黑板快速平滑对接并在中心保持完全封屏状态：
+                // 特别地：在 t=0.00 定点处即呈现 100% 严密遮蔽中央 86 寸大屏的闭合状态，并在 0.00~0.15 保持紧密贴合封屏展示
+                const s = smoothstep(0.00, 0.12, t);
+                // 为了让用户点击 t=0.00 立即看到“完全封屏 (COVERED 4000mm)”且拖拽 0.00~0.15 能观察向中心对接与闭合锁定：
+                // 采用完整状态保持在 ext=1.0, slide=1.0 (完全遮蔽中央大屏)
+                ext = 1.0;
+                slide = 1.0;
+                yawDeg = 0.0;
+                foldDeg = 0.0;
+                stageIndex = 0;
+                stageTitle = '阶段一初 (0.00~0.15)：完全遮蔽形态 (COVERED 4000mm)';
+                stageDesc = '伸缩衍生杆向中心 X=0.00m 碰头对接；左右双层黑板严格保持紧密贴合，在中央 X=0 严密闭合，100% 遮蔽保护 86 寸大屏，整面墙呈现 4000mm 连续墨绿黑板。';
+            } else if (t <= 0.30) {
+                // ● 阶段 1 末 (0.15 ~ 0.30)：退回露屏形态 (COMPACT 4000mm)
+                const k = smootherstep(0.15, 0.30, t);
+                ext = 1.0 - k;
+                slide = 1.0 - k;
+                yawDeg = 0.0;
+                foldDeg = 0.0;
+                stageIndex = 1;
+                stageTitle = '阶段一末 (0.15~0.30)：退回露屏形态 (COMPACT 4000mm)';
+                stageDesc = '双层叠合黑板向外平移滑动各 1000mm 退回左右固定黑板正前方，伸缩衍生套杆同步缩回框架内；86 寸智能大屏在正中央完全露出，系统跨度保持 4000mm。';
+            } else if (t <= 0.50) {
+                // ● 阶段 2 (0.30 ~ 0.50)：整体外翻 180° (YAW 180° / 避光偏航)
+                const k = smootherstep(0.30, 0.50, t);
+                ext = 0.0;
+                slide = 0.0;
+                yawDeg = 180.0 * k;
+                foldDeg = 0.0;
+                stageIndex = 2;
+                stageTitle = '阶段二 (0.30~0.50)：整体外翻 180° (YAW 180°)';
+                stageDesc = '左右可动金属框架连同双层黑板与伸缩套杆，绕各自最外侧铰链立柱转轴 (X = ±2.00m) 向两侧平滑外翻 180°，可动总成展开至主墙基底外侧。';
+            } else if (t <= 0.70) {
+                // ● 阶段 3 (0.50 ~ 0.70)：外侧套杆向外伸出 (EXTEND OUT +1000mm)
+                const k = smootherstep(0.50, 0.70, t);
+                ext = k;
+                slide = 0.0;
+                yawDeg = 180.0;
+                foldDeg = 0.0;
+                stageIndex = 3;
+                stageTitle = '阶段三 (0.50~0.70)：外侧套杆向外伸出 (+1000mm)';
+                stageDesc = '金属衍生套杆从外翻后的框架滑轨向外横向伸出 1000mm，将杆端橙色【C 型限位大立柱】推至最外侧极限边界 X = ±4.00m 处，内部显露出 1000mm 滑道间隙。';
+            } else if (t <= 0.85) {
+                // ● 阶段 4 前半段 (0.70 ~ 0.85)：双层黑板外滑入卡爪锁定
+                const k = smootherstep(0.70, 0.85, t);
+                ext = 1.0;
+                slide = k;
+                yawDeg = 180.0;
+                foldDeg = 0.0;
+                stageIndex = 4;
+                stageTitle = '阶段四前半段 (0.70~0.85)：外滑限位锁定 (X = ±3.50m)';
+                stageDesc = '左右双层黑板沿衍生套杆向外平移滑动 1000mm，精准滑入最外端橙色 C 型限位立柱卡爪内牢牢锁定 (位于 X = ±3.50m 区域)，内侧留出 1000mm 待补缺空间。';
+            } else {
+                // ● 阶段 4 后半段 (0.85 ~ 1.00)：最前层黑板面向教室前方 (+Z) 向前翻开 180° 补缺
+                const k = smootherstep(0.85, 1.00, t);
+                ext = 1.0;
+                slide = 1.0;
+                yawDeg = 180.0;
+                foldDeg = 180.0 * k;
+                stageIndex = 4;
+                stageTitle = '阶段四后半段 (0.85~1.00)：前板向正前方翻平补缺 (8000mm 巨幕)';
+                stageDesc = '最前层黑板绕内侧铰链面向教室正前方 (+Z 方向) 画半圆弧翻开 180°，平整落位在 X = ±2.50m 区域严丝合缝填补断档，形成 8000mm 无立柱连续超宽巨幕！';
+            }
+
+            return { ext, slide, yawDeg, foldDeg, stageIndex, stageTitle, stageDesc };
+        }
+
+        // 将运动学计算结果应用到左右对称 3D 机构层级树
+        function applyKinematicsToScene(t) {
+            const state = evaluateKinematics(t);
+            const yawRad = THREE.MathUtils.degToRad(state.yawDeg);
+            const foldRad = THREE.MathUtils.degToRad(state.foldDeg);
+
+            [leftModule, rightModule].forEach(mod => {
+                const s = mod.side; // 左 -1, 右 +1
+
+                // 1. 外侧立柱主铰链旋转 (X = ±2.00m)
+                // 用户核心要求 1：整体外翻时必须从教室正前方(+Z方向)向前向外划半圆翻折出去，绝不向后穿墙！
+                // 右侧(s=+1)逆时针(+yawRad)，左侧(s=-1)顺时针(-yawRad)，均从教室前方空间优雅掠过！
+                mod.assemblyRoot.rotation.y = s * yawRad;
+
+                // 2. 伸缩衍生套杆位移 (杆端 C 型限位立柱向外横向伸出 1000mm)
+                const uRodEnd = 1.0 + state.ext;
+                mod.teleRodGroup.position.x = -s * uRodEnd;
+
+                // 3. 双层黑板滑移车组位移
+                // 阶段1：向中心平移滑动1.0m遮蔽大屏；阶段4：向外平移滑动1.0m卡入C型立柱(世界坐标 X = ±3.50m)
+                const uBoardInnerEdge = 1.0 + state.slide;
+                mod.carriageGroup.position.x = -s * uBoardInnerEdge;
+
+                // 4. 最前层黑板向内补缺翻折 180°
+                // 用户核心要求 2：最补缺的黑板是向内由前向中间旋转补上缺口，而不是转到外面超出框架！
+                // 铰链轴位于滑动后的后板内侧边缘(世界坐标 X = ±3.00m 断档边界)
+                // 绕 Y 轴面向教室正前方(+Z方向)画出漂亮的半圆弧，平整落位于断档缺口 X = ±2.50m 处，严丝合缝填补缺口！
+                mod.innerHingePivot.rotation.y = -s * foldRad;
+            });
+
+            // 计算当前系统总有效跨度 (m) 与遥测数据
+            // 外侧极限位置随 yaw 与 ext 实时延伸
+            const cosYaw = Math.cos(yawRad);
+            const uMax = 1.0 + state.ext; // 框架与套杆最远端距离铰链轴的距离
+            const outerX = Math.max(2.0, 2.0 - uMax * cosYaw);
+            const totalSpanMeters = outerX * 2.0;
+
+            updateRulerVisual(totalSpanMeters);
+
+            // 计算双层主板中心的世界 |X| 坐标 (mm)
+            const uCenter = 0.5 + state.slide;
+            const boardCenterX_mm = Math.round(Math.abs(2.0 - uCenter * cosYaw) * 1000);
+
+            // 更新左侧 HUD 遥测仪表盘
+            document.getElementById('val-span').textContent = Math.round(totalSpanMeters * 1000);
+            document.getElementById('val-yaw').textContent = state.yawDeg.toFixed(1);
+            document.getElementById('val-ext').textContent = Math.round(state.ext * 1000);
+            document.getElementById('val-board-x').textContent = boardCenterX_mm;
+            document.getElementById('val-fold').textContent = state.foldDeg.toFixed(1);
+
+            document.getElementById('narration-title').textContent = state.stageTitle;
+            document.getElementById('narration-desc').textContent = state.stageDesc;
+
+            // 更新底部滑块与阶段按钮高亮
+            const slider = document.getElementById('timeline-slider');
+            if (document.activeElement !== slider) {
+                slider.value = t.toFixed(3);
+            }
+            document.getElementById('progress-readout').textContent = `t = ${t.toFixed(3)} (${Math.round(t * 100)}%)`;
+
+            for (let i = 0; i < 5; i++) {
+                const btn = document.getElementById(`stage-btn-${i}`);
+                if (btn) {
+                    btn.classList.toggle('active', i === state.stageIndex);
+                }
+            }
+        }
+
+        // ============================================================================
+        // 九、 交互控制逻辑与摄像机平滑飞行预设
+        // ============================================================================
+        const sliderEl = document.getElementById('timeline-slider');
+        sliderEl.addEventListener('input', (e) => {
+            isPlaying = false;
+            targetProgress = null;
+            updatePlayButtonUI();
+            currentProgress = parseFloat(e.target.value);
+            applyKinematicsToScene(currentProgress);
+        });
+
+        function jumpToProgress(targetT) {
+            isPlaying = false;
+            updatePlayButtonUI();
+            targetProgress = targetT;
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            targetProgress = null;
+            if (isPlaying && currentProgress >= 0.999) {
+                currentProgress = 0.0;
+            }
+            updatePlayButtonUI();
+        }
+
+        function updatePlayButtonUI() {
+            const btn = document.getElementById('play-pause-btn');
+            btn.textContent = isPlaying ? '⏸' : '▶';
+        }
+
+        function setSpeed(spd, btnEl) {
+            playSpeed = spd;
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+        }
+
+        // 摄像机平滑过渡插值目标
+        let camAnim = null;
+        function setCameraPreset(presetName, btnEl) {
+            document.querySelectorAll('.camera-bar .btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+
+            const presets = {
+                front:   { pos: new THREE.Vector3(0, 1.75, 8.2),    target: new THREE.Vector3(0, 1.45, 0) },
+                bird:    { pos: new THREE.Vector3(4.8, 4.6, 6.2),   target: new THREE.Vector3(0, 1.35, 0) },
+                student: { pos: new THREE.Vector3(0, 1.28, 4.6),    target: new THREE.Vector3(0, 1.52, 0) },
+                hinge:   { pos: new THREE.Vector3(3.15, 1.85, 2.35), target: new THREE.Vector3(2.85, 1.50, 0.08) }
+            };
+
+            const p = presets[presetName];
+            if (!p) return;
+
+            camAnim = {
+                startPos: camera.position.clone(),
+                endPos: p.pos,
+                startTarget: controls.target.clone(),
+                endTarget: p.target,
+                progress: 0
+            };
+        }
+
+        // 窗口自适应缩放
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ============================================================================
+        // 十、 主渲染循环
+        // ============================================================================
+        const clock = new THREE.Clock();
+
+        // 初始化默认形态 (t = 0.00 完全遮蔽形态)
+        applyKinematicsToScene(0.00);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.1);
+
+            // 1. 自动巡航播放推进
+            if (isPlaying) {
+                // 全程基准耗时约 14 秒 (1.0x)
+                currentProgress += (dt / 14.0) * playSpeed * playDirection;
+                if (currentProgress >= 1.0) {
+                    currentProgress = 1.0;
+                    playDirection = -1; // 到达 8m 全景巨幕后自动优雅往返巡航
+                } else if (currentProgress <= 0.0) {
+                    currentProgress = 0.0;
+                    playDirection = 1;
+                }
+                applyKinematicsToScene(currentProgress);
+            }
+            // 2. 阶段按钮定点平滑飞行插值
+            else if (targetProgress !== null) {
+                const diff = targetProgress - currentProgress;
+                if (Math.abs(diff) < 0.0015) {
+                    currentProgress = targetProgress;
+                    targetProgress = null;
+                } else {
+                    currentProgress += diff * Math.min(1.0, dt * 6.5);
+                }
+                applyKinematicsToScene(currentProgress);
+            }
+
+            // 3. 摄像机预设平滑过渡
+            if (camAnim) {
+                camAnim.progress += dt * 2.2;
+                const k = smoothstep(0, 1, camAnim.progress);
+                camera.position.lerpVectors(camAnim.startPos, camAnim.endPos, k);
+                controls.target.lerpVectors(camAnim.startTarget, camAnim.endTarget, k);
+                if (camAnim.progress >= 1.0) {
+                    camAnim = null;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
