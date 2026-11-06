@@ -306,7 +306,7 @@ $ "Pan"_(k^*) = "arctan2"(X_g - X_(k^*), 1.20) times frac(180 degree, pi), quad 
 #align(center)[
   #image("figures/fig10_vlm_flagship_interactive_gui.png", width: 92%, fit: "contain")
   #v(1pt)
-  #text(size: 8pt, fill: rgb("#475569"), weight: "bold")[图 7：CASTIC 多模态 VLM 智慧教室数字孪生系统 v3.0 旗舰版主控交互界面与 HUD 仪表盘]
+  #text(size: 8pt, fill: rgb("#475569"), weight: "bold")[图 7：GH-VI-2026 多模态 VLM 教室光环境数字孪生主控中枢（v3.0 旗舰版）实机运行界面（集成 DJI 视觉流接入、Qwen2.5-VL 实时推理、8000mm 满幅光路追迹与学生 POV 视角画中画遥测）]
 ]
 
 #v(0.15cm)
