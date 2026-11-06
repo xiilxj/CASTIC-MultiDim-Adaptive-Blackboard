@@ -109,8 +109,9 @@ function results = castic_unified_equation_simulation(custom_config)
 
     %% 4. 生成多维综合可视化仪表盘 (1920x1080 300DPI)
     fprintf('[3/5] 渲染生成 4-in-1 高清科学可视化仪表盘...\n');
+    delete(findobj('Type', 'figure', 'Name', '【CASTIC 2026】光衡 GH-VI-2026: 大一统偏微分-积分方程物理光学数值仿真看板 (4-in-1)'));
     fig = figure('Name', '【CASTIC 2026】光衡 GH-VI-2026: 大一统偏微分-积分方程物理光学数值仿真看板 (4-in-1)', ...
-                 'NumberTitle', 'off', 'Color', [1 1 1], 'Position', [50, 50, 1920, 1080], ...
+                 'NumberTitle', 'off', 'Color', [1 1 1], 'Position', [60, 80, 1400, 820], ...
                  'Visible', 'on');
 
     % 子图 1: 黑板表面光照度分布云图 (Case B 相消态)

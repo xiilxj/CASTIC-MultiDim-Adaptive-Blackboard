@@ -205,6 +205,20 @@ $ cal(L)_("screen")(P_("student"), vec(v)_("obs"), t) = integral_(Omega_("FOV"))
 视网膜黄斑区视锥细胞呈圆柱光波导结构，其 Stiles-Crawford 效应 (SCE-I) 光瞳变迹积分效率为：
 $ bar(eta)_("SCE")(R_("pupil")) = frac(1 - 10^(-rho_("SCE") R_("pupil")^2), ln(10) thin rho_("SCE") R_("pupil")^2) approx 0.714 quad (R_("pupil") = 2.5 "mm") $
 
+*3.5 面向端侧 VLM Agent 实时推理的确定性闭式控制律公式集 (Closed-Form Control Laws for VLM Runtime)* \
+在实际工程落地与边缘端部署中，*VLM 多模态大模型绝不在现场运行耗时的连续偏微积分积分求解*，而是遵循“*顶层 VLM 做视觉眼睛（定性情境识别） + 底层闭式物理公式做确定性大脑（代数毫秒代入） + 嵌入式做手脚（伺服执行）*”的工业级双层解耦控制：
+1. *像面像素到黑板物理坐标逆透视投影闭式方程 (IPM)*: VLM 识别反光斑像素中心 $(u_c, v_c)$ 后，代入相机内参快速解算黑板空间坐标 $[X_g, 0, Z_g]^T$（耗时 $< 0.1 "ms"$）：
+   $ X_g = frac((u_c - c_x) dot Z_("cam"), f_x), quad Z_g = frac((v_c - c_y) dot Z_("cam"), f_y) + H_("offset") $
+2. *最佳响应洗墙灯空间近邻选通算子*: 4 组吸顶灯位于 $X_k in {-2.4, -0.8, 0.8, 2.4} "m"$，Agent 极速判定最短光程灯具编号 $k^*$：
+   $ k^* = arg min_(k in {1, 2, 3, 4}) |X_g - X_k| $
+3. *2-DOF 伺服云台 Pan / Tilt 闭式逆运动学控制律*: 空间位置直接代入反三角函数闭式解析解（单片机耗时 $< 0.15 "ms"$）：
+   $ "Pan"_(k^*) = arctan 2(X_g - X_(k^*), 1.20) times frac(180 degree, pi), quad "Tilt"_(k^*) = arctan 2(2.65 - Z_g, sqrt((X_g - X_(k^*))^2 + 1.44)) times frac(180 degree, pi) $
+4. *活动黑板自适应黄金微前倾闭式锁定律*: 依据大一统方程推导的镜面反射偏转角，强日光直射时直接输出最优闭式解：$theta_("tilt")^* = 4.50 degree$；阴天漫射时自动归零 $theta_("tilt")^* = 0.00 degree$；
+5. *洗墙灯定向驱动功率自适应动态调制律*: 主灯加力调峰与其余 3 盏低载待机闭式计算：
+   $ P_(k^*) = "clamp"(140.0 + 80.0 dot S_("glare") dot (1 + 0.5 w^2), 140.0 "W", 220.0 "W"), quad P_(j eq.not k^*) = 140.0 "W" $
+6. *VLM 全链路响应时间硬实时上界约束*:
+   $ T_("loop") = T_("VLM") (<= 18.5 "ms") + T_("IK") (<= 0.8 "ms") + T_("UART") (<= 1.2 "ms") + T_("Motor") (<= 14.5 "ms") = 35.0 "ms" <= 35 "ms" $
+
 #sec-header("4", "25个核心状态变量规范 SI 符号表与量纲矩阵", "SI Dimensions & State Variables")
 
 #table(
