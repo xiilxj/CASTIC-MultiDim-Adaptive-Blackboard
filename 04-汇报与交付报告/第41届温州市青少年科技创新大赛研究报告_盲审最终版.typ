@@ -57,7 +57,7 @@
       columns: (95pt, 200pt),
       row-gutter: 20pt,
       align: (right, left),
-      text(weight: "bold", size: 12pt)[申报学科：], text(size: 12pt)[工程学 (ENGR)],
+      text(weight: "bold", size: 12pt)[申报学科：], text(size: 12pt)[工程学],
       text(weight: "bold", size: 12pt)[项目类别：], text(size: 12pt)[青少年科技创新成果],
       text(weight: "bold", size: 12pt)[参赛组别：], text(size: 12pt)[高中组（高一年级）],
       text(weight: "bold", size: 12pt)[研究周期：], text(size: 12pt)[2025 年 9 月 — 2026 年 11 月],
